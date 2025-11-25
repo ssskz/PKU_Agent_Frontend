@@ -1,14 +1,34 @@
-**/IntegrationServer/datastore/
-**/IntegrationServer/db/
-**/IntegrationServer/DocumentStore/
-**/IntegrationServer/lib/
-**/IntegrationServer/logs/
-**/IntegrationServer/replicate/
-**/IntegrationServer/sdk/
-**/IntegrationServer/support/
-**/IntegrationServer/update/
-**/IntegrationServer/userFtpRoot/
-**/IntegrationServer/web/
-**/IntegrationServer/WmRepository4/
-**/IntegrationServer/XAStore/
-**/IntegrationServer/packages/Wm*/
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+dist-ssr/
+.temp/
+.cache/
+
+# Environment variables
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.staging
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Editor and OS artifacts
+.DS_Store
+*.swp
+*.swo
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Misc
+coverage/               # 测试覆盖率报告（如果用 Vitest / Jest）
+*.log
