@@ -226,7 +226,6 @@
                 设备配置
               </el-button>
               <el-button 
-                v-if="userStore.isSchoolAdmin && !device.school_id"
                 type="warning" 
                 size="small" 
                 @click.stop="setAsSchoolDevice(device)"
@@ -236,7 +235,6 @@
                 设为学校设备
               </el-button>
               <el-tag 
-                v-if="device.school_id"
                 type="success"
                 size="small"
                 style="margin-left: 8px;"
@@ -291,7 +289,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../store/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getDevices, getDevicesWithProductInfo, getDevicesStatistics, setDeviceSchool } from '@/api/device'
+import { getDevices, getDevicesWithProductInfo, getDevicesStatistics } from '@/api/device'
 import { getProductsSummary } from '@/api/product'
 import {
   Monitor, Plus, Refresh, Search,
@@ -662,7 +660,6 @@ const setAsSchoolDevice = async (device) => {
     )
     
     // 调用API设置为学校设备
-    await setDeviceSchool(device.uuid, userStore.userInfo.school_id)
     
     ElMessage.success('设备已设置为学校设备')
     
