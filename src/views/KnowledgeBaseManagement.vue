@@ -1,23 +1,25 @@
 <template>
   <div class="knowledge-base-management">
-    <el-card>
-      <template #header>
-        <div class="card-header">
-          <span><el-icon><Collection /></el-icon> 知识库管理</span>
+    <!-- 页面头部：标题 + 筛选 + 操作 -->
+    <div class="page-header-section">
+      <div class="header-top">
+        <div class="header-title">
+          <h2><el-icon><Collection /></el-icon> 知识库管理</h2>
+          <span class="header-subtitle">管理和配置您的知识库资源</span>
+        </div>
+        <div class="header-actions">
           <el-button type="primary" @click="showCreateDialog = true">
             <el-icon><Plus /></el-icon>
             创建知识库
           </el-button>
         </div>
-      </template>
-
-      <!-- 搜索筛选 -->
-      <div class="search-bar">
+      </div>
+      <div class="header-filters">
         <el-input
           v-model="searchParams.keyword"
           placeholder="搜索知识库..."
           clearable
-          style="width: 300px"
+          class="search-input"
           @change="loadKnowledgeBases"
         >
           <template #prefix>
@@ -29,7 +31,7 @@
           v-model="searchParams.scope_type"
           placeholder="作用域类型"
           clearable
-          style="width: 150px; margin-left: 10px"
+          class="scope-select"
           @change="loadKnowledgeBases"
         >
           <el-option label="全部" value="" />
@@ -37,68 +39,105 @@
           <el-option label="课程级" value="course" />
           <el-option label="智能体级" value="agent" />
         </el-select>
+        
+        <el-button @click="resetFilters" class="reset-btn">
+          <el-icon><RefreshLeft /></el-icon>
+          重置
+        </el-button>
       </div>
+    </div>
 
-      <!-- 知识库列表（卡片视图） -->
-      <div v-loading="loading" class="kb-grid">
-        <el-card
-          v-for="kb in knowledgeBases"
-          :key="kb.uuid"
-          class="kb-card"
-          shadow="hover"
-          @click="viewKnowledgeBase(kb)"
-        >
-          <div class="kb-card-header">
-            <el-icon :size="40" color="#409EFF">
-              <component :is="getScopeIcon(kb.scope_type)" />
-            </el-icon>
-            <el-tag :type="getScopeTagType(kb.scope_type)" size="small">
-              {{ getScopeLabel(kb.scope_type) }}
-            </el-tag>
+    <!-- 知识库列表（卡片视图） -->
+    <div v-loading="loading" class="kb-grid">
+      <el-card
+        v-for="kb in knowledgeBases"
+        :key="kb.uuid"
+        class="kb-card"
+        shadow="hover"
+        :body-style="{ padding: '0' }"
+        @click="viewKnowledgeBase(kb)"
+      >
+        <div class="card-header">
+          <div class="header-content">
+            <div class="kb-icon">
+              <el-icon :size="24">
+                <component :is="getScopeIcon(kb.scope_type)" />
+              </el-icon>
+            </div>
+            <div class="kb-info">
+              <h3 class="kb-name">{{ kb.name }}</h3>
+              <div class="kb-badges">
+                <el-tag :type="getScopeTagType(kb.scope_type)" size="small">
+                  {{ getScopeLabel(kb.scope_type) }}
+                </el-tag>
+              </div>
+            </div>
           </div>
+        </div>
 
-          <h3 class="kb-title">{{ kb.name }}</h3>
+        <div class="card-body">
           <p class="kb-description">{{ kb.description || '暂无描述' }}</p>
 
           <div class="kb-stats">
-            <el-statistic title="文档" :value="kb.document_count || 0" />
-            <el-statistic title="文本块" :value="kb.chunk_count || 0" />
             <div class="stat-item">
-              <span class="stat-title">大小</span>
-              <span class="stat-value">{{ formatSize(kb.total_size) }}</span>
+              <el-icon><Document /></el-icon>
+              <span>{{ kb.document_count || 0 }} 文档</span>
+            </div>
+            <div class="stat-item">
+              <el-icon><Grid /></el-icon>
+              <span>{{ kb.chunk_count || 0 }} 文本块</span>
+            </div>
+            <div class="stat-item">
+              <el-icon><Folder /></el-icon>
+              <span>{{ formatSize(kb.total_size) }}</span>
             </div>
           </div>
 
-          <div class="kb-footer">
-            <span class="kb-owner">{{ kb.owner_name }}</span>
-            <span class="kb-time">{{ formatTime(kb.created_at) }}</span>
+          <div class="kb-meta">
+            <span class="meta-item">
+              <el-icon><User /></el-icon>
+              {{ kb.owner_name }}
+            </span>
+            <span class="meta-item">
+              <el-icon><Clock /></el-icon>
+              {{ formatTime(kb.created_at) }}
+            </span>
           </div>
+        </div>
 
-          <div class="kb-actions" @click.stop>
-            <el-button size="small" type="primary" link @click="viewKnowledgeBase(kb)">
-              查看
-            </el-button>
-            <el-button size="small" type="info" link @click="editKnowledgeBase(kb)">
-              编辑
-            </el-button>
-            <el-button size="small" type="danger" link @click="confirmDelete(kb)">
-              删除
-            </el-button>
-          </div>
-        </el-card>
+        <div class="card-footer" @click.stop>
+          <el-button size="small" @click="viewKnowledgeBase(kb)">
+            <el-icon><View /></el-icon>
+            查看
+          </el-button>
+          <el-button type="primary" size="small" @click="editKnowledgeBase(kb)">
+            <el-icon><Edit /></el-icon>
+            编辑
+          </el-button>
+          <el-button type="danger" size="small" @click="confirmDelete(kb)">
+            <el-icon><Delete /></el-icon>
+            删除
+          </el-button>
+        </div>
+      </el-card>
+    </div>
+
+    <!-- 分页 -->
+    <div class="pagination-section">
+      <div class="pagination-info">
+        <span class="total-text">共 <strong>{{ pagination.total }}</strong> 个知识库</span>
       </div>
-
-      <!-- 分页 -->
       <el-pagination
         v-model:current-page="pagination.page"
         v-model:page-size="pagination.pageSize"
         :total="pagination.total"
         :page-sizes="[12, 24, 48]"
-        layout="total, sizes, prev, pager, next, jumper"
+        layout="sizes, prev, pager, next, jumper"
         @size-change="loadKnowledgeBases"
         @current-change="loadKnowledgeBases"
+        class="custom-pagination"
       />
-    </el-card>
+    </div>
 
     <!-- 创建/编辑对话框（简化版） -->
     <el-dialog
@@ -159,7 +198,13 @@ import {
   Document,
   School,
   Grid,
-  User
+  User,
+  RefreshLeft,
+  Folder,
+  Clock,
+  View,
+  Edit,
+  Delete
 } from '@element-plus/icons-vue'
 import {
   getKnowledgeBases,
@@ -380,6 +425,13 @@ const handleSubmit = async () => {
   }
 }
 
+const resetFilters = () => {
+  searchParams.keyword = ''
+  searchParams.scope_type = ''
+  pagination.page = 1
+  loadKnowledgeBases()
+}
+
 const confirmDelete = (kb) => {
   // 检查是否为系统知识库
   if (kb.is_system) {
@@ -432,111 +484,403 @@ onMounted(() => {
 
 <style scoped>
 .knowledge-base-management {
-  padding: 20px;
+  /* 主布局已有 padding */
 }
 
-.card-header {
+/* 页面头部区域 */
+.page-header-section {
+  margin-bottom: 24px;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04), 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+}
+
+.page-header-section .header-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.6);
 }
 
-.search-bar {
+.header-title h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin-top: 4px;
+  display: block;
+  font-weight: 500;
+}
+
+.header-actions .el-button[type="primary"] {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  color: #ffffff;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.header-filters {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.search-input {
+  width: 240px;
+}
+
+.search-input :deep(.el-input__wrapper) {
+  background: rgba(248, 250, 252, 0.9);
+  border: 1.5px solid rgba(226, 232, 240, 0.8);
+  border-radius: 10px;
+  padding: 4px 12px;
+  transition: all 0.3s ease;
+}
+
+.search-input :deep(.el-input__wrapper:hover) {
+  background: #ffffff;
+  border-color: rgba(102, 126, 234, 0.4);
+}
+
+.search-input :deep(.el-input__wrapper.is-focus) {
+  background: #ffffff;
+  border-color: #667eea;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+}
+
+.scope-select {
+  width: 160px;
+}
+
+.scope-select :deep(.el-input__wrapper) {
+  background: rgba(248, 250, 252, 0.9);
+  border: 1.5px solid rgba(226, 232, 240, 0.8);
+  border-radius: 10px;
+}
+
+.reset-btn {
+  background: rgba(248, 250, 252, 0.9);
+  border: 1.5px solid rgba(226, 232, 240, 0.8);
+  color: #64748b;
+  border-radius: 10px;
+}
+
+.reset-btn:hover {
+  background: #ffffff;
+  border-color: #667eea;
+  color: #667eea;
+}
+
+/* 卡片网格布局 */
+.kb-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
   margin-bottom: 20px;
 }
 
-.kb-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
-  margin: 20px 0;
-}
-
+/* 知识库卡片样式 */
 .kb-card {
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .kb-card:hover {
-  transform: translateY(-5px);
+  transform: translateY(-8px);
+  border-color: rgba(102, 126, 234, 0.3);
+  box-shadow: 0 20px 40px rgba(102, 126, 234, 0.15), 0 8px 16px rgba(0, 0, 0, 0.08);
 }
 
-.kb-card-header {
+.kb-card .card-header {
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.kb-card .header-content {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
+  gap: 16px;
 }
 
-.kb-title {
+.kb-icon {
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.kb-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.kb-name {
   font-size: 18px;
-  font-weight: bold;
-  margin: 10px 0;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 8px 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.kb-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.card-body {
+  padding: 20px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: #ffffff;
+}
+
 .kb-description {
-  color: #666;
   font-size: 14px;
-  height: 40px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .kb-stats {
   display: flex;
-  justify-content: space-around;
-  margin: 15px 0;
-  padding: 15px 0;
-  border-top: 1px solid #eee;
-  border-bottom: 1px solid #eee;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(226, 232, 240, 0.6);
 }
 
 .stat-item {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  text-align: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #94a3b8;
 }
 
-.stat-title {
+.stat-item .el-icon {
+  font-size: 16px;
+  color: #667eea;
+}
+
+.kb-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  color: #94a3b8;
+  padding-top: 12px;
+  border-top: 1px solid rgba(226, 232, 240, 0.6);
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.meta-item .el-icon {
   font-size: 14px;
-  color: var(--el-text-color-secondary);
-  margin-bottom: 4px;
 }
 
-.stat-value {
-  font-size: 24px;
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-  line-height: 32px;
+.card-footer {
+  padding: 16px 20px;
+  background: rgba(248, 250, 252, 0.8);
+  border-top: 1px solid rgba(226, 232, 240, 0.6);
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
-.kb-footer {
+.card-footer .el-button {
+  flex: 1;
+  min-width: 60px;
+  border-radius: 10px;
+}
+
+/* 分页区域样式 */
+.pagination-section {
+  margin-top: 32px;
+  padding: 20px 24px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 12px;
-  color: #999;
-  margin-top: 10px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
 }
 
-.kb-actions {
+.pagination-info {
   display: flex;
-  justify-content: space-around;
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid #eee;
+  align-items: center;
+  gap: 8px;
 }
 
-.el-pagination {
-  margin-top: 20px;
-  justify-content: center;
+.total-text {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.total-text strong {
+  color: #667eea;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.custom-pagination :deep(.el-pager li) {
+  background: rgba(248, 250, 252, 0.9);
+  border: 1.5px solid rgba(226, 232, 240, 0.8);
+  border-radius: 10px;
+  margin: 0 4px;
+  min-width: 36px;
+  height: 36px;
+  line-height: 34px;
+  font-weight: 600;
+}
+
+.custom-pagination :deep(.el-pager li:hover) {
+  color: #667eea;
+  border-color: rgba(102, 126, 234, 0.4);
+}
+
+.custom-pagination :deep(.el-pager li.is-active) {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.custom-pagination :deep(.btn-prev),
+.custom-pagination :deep(.btn-next) {
+  background: rgba(248, 250, 252, 0.9);
+  border: 1.5px solid rgba(226, 232, 240, 0.8);
+  border-radius: 10px;
+  min-width: 36px;
+  height: 36px;
+}
+
+.custom-pagination :deep(.el-select .el-input__wrapper) {
+  background: rgba(248, 250, 252, 0.9);
+  border: 1.5px solid rgba(226, 232, 240, 0.8);
+  border-radius: 10px;
+}
+
+.custom-pagination :deep(.el-pagination__jump .el-input__wrapper) {
+  background: rgba(248, 250, 252, 0.9);
+  border: 1.5px solid rgba(226, 232, 240, 0.8);
+  border-radius: 10px;
+  width: 60px;
+}
+
+/* 响应式设计 */
+@media (max-width: 1400px) {
+  .kb-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+}
+
+@media (max-width: 992px) {
+  .header-filters {
+    flex-wrap: wrap;
+  }
+  
+  .search-input {
+    width: 100%;
+    min-width: 200px;
+  }
+}
+
+@media (max-width: 768px) {
+  .kb-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .page-header-section {
+    padding: 16px;
+    border-radius: 12px;
+  }
+  
+  .page-header-section .header-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .header-actions {
+    width: 100%;
+  }
+  
+  .header-actions .el-button {
+    width: 100%;
+  }
+  
+  .header-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .search-input,
+  .scope-select {
+    width: 100%;
+  }
+  
+  .reset-btn {
+    width: 100%;
+  }
+  
+  .pagination-section {
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+    border-radius: 12px;
+  }
+  
+  .custom-pagination :deep(.el-pagination__jump) {
+    display: none;
+  }
 }
 </style>
-

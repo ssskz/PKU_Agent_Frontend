@@ -88,6 +88,13 @@ const routes = [
         component: () => import('../views/PluginEditor.vue'),
         meta: { requiresAuth: true }
       },
+      // 工作流管理
+      {
+        path: 'workflows',
+        name: 'Workflows',
+        component: () => import('../views/Workflows.vue'),
+        meta: { requiresAuth: true }
+      },
       // 模型配置
       {
         path: 'llm-models',

@@ -1,12 +1,24 @@
 <template>
   <div class="kb-detail">
-    <el-page-header @back="goBack" title="返回">
-      <template #content>
-        <span class="kb-name">{{ knowledgeBase.name }}</span>
-      </template>
-    </el-page-header>
+    <!-- 页面头部 -->
+    <div class="page-header-section">
+      <el-button class="back-button" @click="goBack">
+        <el-icon><ArrowLeft /></el-icon>
+        返回
+      </el-button>
+      <div class="header-content">
+        <h1 class="kb-title">{{ knowledgeBase.name }}</h1>
+        <div class="kb-meta-info">
+          <el-tag :type="getScopeTagType(knowledgeBase.scope_type)" size="small">
+            {{ getScopeLabel(knowledgeBase.scope_type) }}
+          </el-tag>
+          <span class="meta-text">创建者：{{ knowledgeBase.owner_name }}</span>
+          <span class="meta-text">创建时间：{{ formatTime(knowledgeBase.created_at) }}</span>
+        </div>
+      </div>
+    </div>
 
-    <el-row :gutter="20" style="margin-top: 20px">
+    <el-row :gutter="24" class="content-row">
       <!-- 左侧：知识库信息和检索测试 -->
       <el-col :xs="24" :sm="24" :md="8" :lg="8" :xl="8">
         <!-- 知识库信息 -->
@@ -230,31 +242,31 @@
 
           <!-- 文档列表 -->
           <el-table v-loading="loading" :data="documents" stripe>
-            <el-table-column prop="title" label="标题" min-width="200" />
-            <el-table-column prop="file_type" label="类型" width="80">
+            <el-table-column prop="title" label="标题" min-width="240" show-overflow-tooltip align="center" />
+            <el-table-column prop="file_type" label="类型" width="70" align="center">
               <template #default="{ row }">
                 <el-tag size="small">{{ row.file_type.toUpperCase() }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="file_size" label="大小" width="100">
+            <el-table-column prop="file_size" label="大小" width="85" align="center">
               <template #default="{ row }">
                 {{ formatSize(row.file_size) }}
               </template>
             </el-table-column>
-            <el-table-column prop="embedding_status" label="向量化状态" width="120">
+            <el-table-column prop="embedding_status" label="状态" width="95" align="center">
               <template #default="{ row }">
                 <el-tag :type="getStatusType(row.embedding_status)" size="small">
                   {{ getStatusLabel(row.embedding_status) }}
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="chunk_count" label="文本块" width="80" />
-            <el-table-column prop="created_at" label="上传时间" width="180">
+            <el-table-column prop="chunk_count" label="文本块" width="75" align="center" />
+            <el-table-column prop="created_at" label="上传时间" width="155" align="center">
               <template #default="{ row }">
                 {{ formatTime(row.created_at) }}
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="240" fixed="right">
+            <el-table-column label="操作" width="150" fixed="right" align="center">
               <template #default="{ row }">
                 <el-button size="small" type="primary" link @click="viewDocument(row)">
                   查看
@@ -293,8 +305,12 @@
     <el-dialog 
       v-model="showChunksDialog" 
       :title="`文档详情 - ${currentDocument?.title || ''}`" 
-      width="80%"
-      top="5vh"
+      width="75%"
+      :z-index="3000"
+      :modal-append-to-body="true"
+      :append-to-body="true"
+      :lock-scroll="true"
+      class="document-detail-dialog"
     >
       <div v-if="currentDocument">
         <!-- 文档基本信息 -->
@@ -534,8 +550,12 @@
     <el-dialog 
       v-model="showPreviewDialog" 
       title="文档切分预览" 
-      width="80%"
-      top="5vh"
+      width="75%"
+      :z-index="3000"
+      :modal-append-to-body="true"
+      :append-to-body="true"
+      :lock-scroll="true"
+      class="preview-dialog"
     >
       <div v-if="previewData">
         <!-- 预览摘要 -->
@@ -687,7 +707,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Upload, View, Check, Back, QuestionFilled, Search, Document, EditPen, Coin } from '@element-plus/icons-vue'
+import { Upload, View, Check, Back, QuestionFilled, Search, Document, EditPen, Coin, ArrowLeft } from '@element-plus/icons-vue'
 import {
   getKnowledgeBase,
   getDocuments,
@@ -1099,19 +1119,80 @@ onMounted(() => {
 .kb-detail {
   padding: 20px;
   min-height: calc(100vh - 60px);
-  background: var(--el-bg-color-page);
+  background: #f8fafc;
 }
 
-.kb-name {
-  font-size: 20px;
-  font-weight: bold;
-  color: var(--el-text-color-primary);
+/* 页面头部样式 */
+.page-header-section {
+  margin-bottom: 24px;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04), 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+}
+
+.back-button {
+  margin-bottom: 16px;
+  background: rgba(248, 250, 252, 0.9);
+  border: 1.5px solid rgba(226, 232, 240, 0.8);
+  color: #64748b;
+  border-radius: 10px;
+}
+
+.back-button:hover {
+  background: #ffffff;
+  border-color: #667eea;
+  color: #667eea;
+}
+
+.header-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.kb-title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.kb-meta-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.meta-text {
+  font-size: 14px;
+  color: #64748b;
+}
+
+.content-row {
+  margin-top: 24px;
 }
 
 /* 卡片样式 */
 .info-card,
+.search-card,
+.documents-card {
+  border-radius: 16px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+.info-card,
 .search-card {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .documents-card {
@@ -1407,7 +1488,107 @@ onMounted(() => {
   }
 }
 
-/* 对话框样式 */
+/* 对话框样式 - 更美观的设计 */
+:deep(.document-detail-dialog),
+:deep(.preview-dialog) {
+  margin-top: 80px !important;
+  max-height: calc(100vh - 100px);
+  display: flex;
+  flex-direction: column;
+  border-radius: 20px !important;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(102, 126, 234, 0.3), 0 8px 20px rgba(0, 0, 0, 0.15) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+:deep(.document-detail-dialog .el-dialog__body),
+:deep(.preview-dialog .el-dialog__body) {
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+  padding: 24px;
+  background: #f8fafc;
+}
+
+/* 美化对话框滚动条 */
+:deep(.document-detail-dialog .el-dialog__body)::-webkit-scrollbar,
+:deep(.preview-dialog .el-dialog__body)::-webkit-scrollbar {
+  width: 8px;
+}
+
+:deep(.document-detail-dialog .el-dialog__body)::-webkit-scrollbar-thumb,
+:deep(.preview-dialog .el-dialog__body)::-webkit-scrollbar-thumb {
+  background: rgba(102, 126, 234, 0.3);
+  border-radius: 10px;
+}
+
+:deep(.document-detail-dialog .el-dialog__body)::-webkit-scrollbar-thumb:hover,
+:deep(.preview-dialog .el-dialog__body)::-webkit-scrollbar-thumb:hover {
+  background: rgba(102, 126, 234, 0.5);
+}
+
+:deep(.document-detail-dialog .el-dialog__body)::-webkit-scrollbar-track,
+:deep(.preview-dialog .el-dialog__body)::-webkit-scrollbar-track {
+  background: rgba(248, 250, 252, 0.5);
+  border-radius: 10px;
+}
+
+:deep(.document-detail-dialog .el-dialog__header),
+:deep(.preview-dialog .el-dialog__header) {
+  border-bottom: none;
+  padding: 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+
+:deep(.document-detail-dialog .el-dialog__title),
+:deep(.preview-dialog .el-dialog__title) {
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: 0.5px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+:deep(.document-detail-dialog .el-dialog__headerbtn),
+:deep(.preview-dialog .el-dialog__headerbtn) {
+  top: 24px;
+  right: 24px;
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+:deep(.document-detail-dialog .el-dialog__headerbtn:hover),
+:deep(.preview-dialog .el-dialog__headerbtn:hover) {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+:deep(.document-detail-dialog .el-dialog__headerbtn .el-dialog__close),
+:deep(.preview-dialog .el-dialog__headerbtn .el-dialog__close) {
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+:deep(.document-detail-dialog .el-dialog__footer),
+:deep(.preview-dialog .el-dialog__footer) {
+  padding: 16px 24px;
+  background: rgba(248, 250, 252, 0.8);
+  border-top: 1px solid rgba(226, 232, 240, 0.6);
+  flex-shrink: 0;
+}
+
+:deep(.el-overlay) {
+  z-index: 2999 !important;
+  backdrop-filter: blur(4px);
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+
 :deep(.chunk-detail-dialog) {
   width: 70%;
   max-width: 800px;
@@ -1425,4 +1606,3 @@ onMounted(() => {
   border-radius: 6px;
 }
 </style>
-

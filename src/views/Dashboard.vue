@@ -6,12 +6,6 @@
         <h1 class="welcome-title">你好，{{ displayName }} 👋</h1>
         <p class="welcome-subtitle">{{ currentDate }} · 欢迎使用PKU-RAG智能体平台</p>
       </div>
-      <div class="quick-stats">
-        <div class="quick-stat-item">
-          <span class="stat-number">{{ agentCount }}</span>
-          <span class="stat-label">智能体</span>
-        </div>
-      </div>
     </div>
 
     <!-- Windows 11风格磁贴网格 -->
@@ -23,16 +17,18 @@
           <span>AI 智能体</span>
         </h2>
         <div class="tiles-grid">
-          <!-- 智能体管理 - 大卡片 -->
-          <div class="tile tile-large tile-gradient-purple" @click="navigateTo('/agents')">
+          <!-- 智能体管理 -->
+          <div class="tile tile-medium tile-gradient-purple" @click="navigateTo('/agents')">
             <div class="tile-content">
               <div class="tile-icon">
-                <el-icon :size="48"><ChatDotRound /></el-icon>
+                <el-icon :size="40"><ChatDotRound /></el-icon>
               </div>
               <div class="tile-info">
-                <h3 class="tile-title">智能体管理</h3>
+                <div class="tile-header">
+                  <h3 class="tile-title">智能体管理</h3>
+                  <div class="tile-badge-inline">{{ agentCount }}</div>
+                </div>
                 <p class="tile-desc">创建和管理AI智能体</p>
-                <div class="tile-badge">{{ agentCount }} 个智能体</div>
               </div>
             </div>
             <div class="tile-glow"></div>
@@ -61,6 +57,20 @@
               <div class="tile-info">
                 <h3 class="tile-title">插件管理</h3>
                 <p class="tile-desc">OpenAPI插件</p>
+              </div>
+            </div>
+            <div class="tile-glow"></div>
+          </div>
+
+          <!-- 工作流 -->
+          <div class="tile tile-medium tile-gradient-orange" @click="navigateTo('/workflows')">
+            <div class="tile-content">
+              <div class="tile-icon">
+                <el-icon :size="40"><Compass /></el-icon>
+              </div>
+              <div class="tile-info">
+                <h3 class="tile-title">工作流</h3>
+                <p class="tile-desc">流程编排</p>
               </div>
             </div>
             <div class="tile-glow"></div>
@@ -129,7 +139,7 @@ import { getDashboardStats } from '@/api/dashboard'
 import logger from '../utils/logger'
 import {
   ChatDotRound, Collection, Connection, TrendCharts,
-  UserFilled, Setting
+  UserFilled, Setting, Compass
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -582,13 +592,43 @@ onMounted(() => {
   flex-direction: column;
 }
 
+.tile-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
 .tile-title {
-  margin: 0 0 10px 0;
+  margin: 0;
   font-size: 1.5rem;
   font-weight: 800;
   line-height: 1.2;
   letter-spacing: -0.3px;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.tile-badge-inline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 10px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 14px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.tile:hover .tile-badge-inline {
+  background: rgba(255, 255, 255, 0.4);
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .tile-title-small {
