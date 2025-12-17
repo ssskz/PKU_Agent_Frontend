@@ -1,271 +1,193 @@
 <template>
   <div class="agent-editor">
-    <el-page-header @back="goBack" :content="pageTitle">
-      <template #extra>
+    <!-- 优化后的顶部栏 -->
+    <div class="page-header">
+      <div class="header-left">
+        <el-button class="back-btn" text @click="goBack">
+          <el-icon size="18"><ArrowLeft /></el-icon>
+        </el-button>
+        <div class="title-section">
+          <h2 class="page-title">{{ pageTitle }}</h2>
+          <el-tag v-if="agentForm.is_active === 1" type="success" size="small">运行中</el-tag>
+          <el-tag v-else type="info" size="small">已禁用</el-tag>
+        </div>
+      </div>
+      <div class="header-right">
+        <el-button @click="goBack">取消</el-button>
         <el-button type="primary" @click="saveAgent" :loading="saving">
           <el-icon><Document /></el-icon>
-          保存
+          保存配置
         </el-button>
-      </template>
-    </el-page-header>
+      </div>
+    </div>
 
     <div class="editor-content" v-loading="loading">
-      <!-- 基本信息卡片 -->
-      <el-card class="section-card">
-        <template #header>
-          <div class="card-header">
-            <span class="card-title">基本信息</span>
-          </div>
-        </template>
-        <el-form :model="agentForm" :rules="rules" ref="formRef" label-width="120px">
-          <el-form-item label="智能体名称" prop="name">
-            <el-input v-model="agentForm.name" placeholder="请输入智能体名称" style="max-width: 500px;" />
-          </el-form-item>
-          <el-form-item label="描述" prop="description">
-            <el-input
-              v-model="agentForm.description"
-              type="textarea"
-              :rows="3"
-              placeholder="请输入智能体描述"
-              style="max-width: 800px;"
-            />
-          </el-form-item>
-          <el-form-item label="大模型" prop="llm_model_id">
-            <el-select 
-              v-model="agentForm.llm_model_id" 
-              placeholder="选择大模型" 
-              style="max-width: 500px;"
-              clearable
-              filterable
-            >
-              <el-option
-                v-for="model in availableModels"
-                :key="model.id"
-                :label="model.display_name"
-                :value="model.id"
-              >
-                <span style="float: left">{{ model.display_name }}</span>
-                <span style="float: right; color: var(--el-text-color-secondary); font-size: 13px">
-                  {{ model.provider }}
-                </span>
-              </el-option>
-            </el-select>
-            <div style="margin-top: 5px; font-size: 12px; color: #909399;">
-              选择智能体使用的大语言模型，留空则使用系统默认模型
-            </div>
-          </el-form-item>
-          <el-form-item label="状态" prop="is_active">
-            <el-radio-group v-model="agentForm.is_active">
-              <el-radio :label="1">激活</el-radio>
-              <el-radio :label="0">禁用</el-radio>
-            </el-radio-group>
-          </el-form-item>
-        </el-form>
-      </el-card>
-
-      <!-- 系统提示词卡片 -->
-      <el-card class="section-card">
-        <template #header>
-          <div class="card-header">
-            <span class="card-title">系统提示词配置</span>
-            <el-button text @click="showPromptTemplates">
-              <el-icon><Document /></el-icon>
-              使用模板
-            </el-button>
-          </div>
-        </template>
-        <div class="prompt-editor">
-          <el-input
-            v-model="agentForm.system_prompt"
-            type="textarea"
-            :rows="16"
-            placeholder="请输入系统提示词，用于指导 AI 智能体的行为和角色定位
-
-示例：
-你是一个专业的物联网助手，擅长帮助用户管理和控制智能设备。
-你的主要职责包括：
-1. 解答用户关于设备使用的问题
-2. 帮助用户控制智能设备（如开关灯、调节温度等）
-3. 分析传感器数据并提供建议
-4. 设置自动化场景
-
-请用友好、专业的语气与用户交流。"
-            class="prompt-textarea"
-          />
-          <div class="prompt-tips">
-            <el-alert
-              title="提示"
-              type="info"
-              :closable="false"
-              show-icon
-            >
-              <ul>
-                <li>系统提示词用于定义智能体的角色、能力和行为规范</li>
-                <li>清晰的提示词能让智能体更好地理解用户需求</li>
-                <li>建议包含：角色定位、主要功能、交互风格等</li>
-              </ul>
-            </el-alert>
-          </div>
-        </div>
-      </el-card>
-
-      <!-- 插件配置卡片 -->
-      <el-card class="section-card">
-        <template #header>
-          <div class="card-header">
-            <span class="card-title">插件配置 ({{ agentForm.plugin_ids.length }})</span>
-            <el-button type="primary" @click="showPluginSelector">
-              <el-icon><Plus /></el-icon>
-              添加插件
-            </el-button>
-          </div>
-        </template>
-        <div class="plugins-config">
-          <el-empty v-if="selectedPlugins.length === 0" description="暂未关联任何插件">
-            <el-button type="primary" @click="showPluginSelector">添加插件</el-button>
-          </el-empty>
-
-          <div v-else class="plugins-list">
-            <el-card
-              v-for="plugin in selectedPlugins"
-              :key="plugin.id"
-              class="plugin-card"
-              shadow="hover"
-            >
-              <template #header>
-                <div class="plugin-card-header">
-                  <span class="plugin-name">{{ plugin.name }}</span>
-                  <el-button
-                    type="danger"
-                    size="small"
-                    text
-                    @click="removePlugin(plugin.id)"
-                  >
-                    <el-icon><Delete /></el-icon>
-                    移除
-                  </el-button>
+      <!-- 2x2 网格布局 -->
+      <div class="grid-layout">
+        <!-- 基本信息卡片 -->
+        <el-card class="section-card grid-item">
+          <template #header>
+            <div class="card-header">
+              <div class="card-title-wrapper">
+                <div class="card-icon basic-icon">
+                  <el-icon><Setting /></el-icon>
                 </div>
-              </template>
-              <div class="plugin-description">{{ plugin.description || '暂无描述' }}</div>
-              <div class="plugin-meta">
-                <el-tag size="small">{{ plugin.plugin_type }}</el-tag>
-                <el-tag size="small" :type="plugin.is_active ? 'success' : 'info'">
-                  {{ plugin.is_active ? '激活' : '禁用' }}
-                </el-tag>
+                <span class="card-title">基本信息</span>
               </div>
-            </el-card>
-          </div>
-        </div>
-      </el-card>
+            </div>
+          </template>
+          <el-form :model="agentForm" :rules="rules" ref="formRef" label-width="100px">
+            <el-form-item label="智能体名称" prop="name">
+              <el-input v-model="agentForm.name" placeholder="请输入智能体名称" />
+            </el-form-item>
+            <el-form-item label="描述" prop="description">
+              <el-input
+                v-model="agentForm.description"
+                type="textarea"
+                :rows="2"
+                placeholder="请输入智能体描述"
+              />
+            </el-form-item>
+            <el-form-item label="大模型" prop="llm_model_id">
+              <el-select 
+                v-model="agentForm.llm_model_id" 
+                placeholder="选择大模型" 
+                clearable
+                filterable
+                style="width: 100%;"
+              >
+                <el-option
+                  v-for="model in availableModels"
+                  :key="model.id"
+                  :label="model.display_name"
+                  :value="model.id"
+                >
+                  <span style="float: left">{{ model.display_name }}</span>
+                  <span style="float: right; color: var(--el-text-color-secondary); font-size: 13px">
+                    {{ model.provider }}
+                  </span>
+                </el-option>
+              </el-select>
+            </el-form-item>
+            <el-form-item label="状态" prop="is_active">
+              <el-radio-group v-model="agentForm.is_active">
+                <el-radio :label="1">激活</el-radio>
+                <el-radio :label="0">禁用</el-radio>
+              </el-radio-group>
+            </el-form-item>
+          </el-form>
+        </el-card>
 
-      <!-- 知识库配置卡片 -->
-      <el-card class="section-card">
-        <template #header>
-          <div class="card-header">
-            <span class="card-title">知识库配置 ({{ knowledgeBases.length }})</span>
-            <el-button type="primary" @click="showKnowledgeBaseSelector">
-              <el-icon><Plus /></el-icon>
-              添加知识库
-            </el-button>
+        <!-- 系统提示词卡片 -->
+        <el-card class="section-card grid-item">
+          <template #header>
+            <div class="card-header">
+              <div class="card-title-wrapper">
+                <div class="card-icon prompt-icon">
+                  <el-icon><ChatDotRound /></el-icon>
+                </div>
+                <span class="card-title">系统提示词</span>
+              </div>
+              <el-button text size="small" @click="showPromptTemplates">
+                <el-icon><Document /></el-icon>
+                模板
+              </el-button>
+            </div>
+          </template>
+          <div class="prompt-editor">
+            <el-input
+              v-model="agentForm.system_prompt"
+              type="textarea"
+              :rows="10"
+              placeholder="请输入系统提示词，用于指导 AI 智能体的行为和角色定位..."
+              class="prompt-textarea"
+            />
           </div>
-        </template>
-        <div class="knowledge-bases-config">
-          <el-empty v-if="knowledgeBases.length === 0" description="暂未关联任何知识库">
-            <el-button type="primary" @click="showKnowledgeBaseSelector">添加知识库</el-button>
-          </el-empty>
+        </el-card>
 
-          <div v-else class="knowledge-bases-list">
-            <el-card
-              v-for="kb in knowledgeBases"
-              :key="kb.id"
-              class="kb-card"
-              shadow="hover"
-            >
-              <template #header>
-                <div class="kb-card-header">
-                  <div>
-                    <span class="kb-name">{{ kb.knowledge_base_name }}</span>
-                    <el-tag size="small" style="margin-left: 10px">{{ scopeTypeLabel(kb.scope_type) }}</el-tag>
-                  </div>
-                  <el-button
-                    type="danger"
-                    size="small"
-                    text
-                    @click="removeKnowledgeBase(kb.knowledge_base_uuid)"
-                  >
-                    <el-icon><Delete /></el-icon>
-                    移除
-                  </el-button>
+        <!-- 插件配置卡片 -->
+        <el-card class="section-card grid-item">
+          <template #header>
+            <div class="card-header">
+              <div class="card-title-wrapper">
+                <div class="card-icon plugin-icon">
+                  <el-icon><Connection /></el-icon>
                 </div>
-              </template>
-              <div class="kb-info">
-                <div class="kb-row">
-                  <span class="kb-label">优先级:</span>
-                  <el-input-number
-                    v-model="kb.priority"
-                    :min="1"
-                    :max="10"
-                    size="small"
-                    @change="updateKBConfig(kb)"
-                  />
-                  <span class="kb-tip">（1-10，数字越大越优先）</span>
+                <span class="card-title">插件配置</span>
+                <el-tag size="small" type="info" round>{{ agentForm.plugin_ids.length }}</el-tag>
+              </div>
+              <el-button type="primary" size="small" @click="showPluginSelector">
+                <el-icon><Plus /></el-icon>
+                添加
+              </el-button>
+            </div>
+          </template>
+          <div class="plugins-config">
+            <el-empty v-if="selectedPlugins.length === 0" description="暂未关联插件" :image-size="60">
+              <el-button type="primary" size="small" @click="showPluginSelector">添加插件</el-button>
+            </el-empty>
+            <div v-else class="plugins-compact-list">
+              <div
+                v-for="plugin in selectedPlugins"
+                :key="plugin.id"
+                class="plugin-item"
+              >
+                <div class="plugin-item-info">
+                  <span class="plugin-item-name">{{ plugin.name }}</span>
+                  <el-tag size="small" type="success">{{ plugin.plugin_type }}</el-tag>
                 </div>
-                <div class="kb-row">
-                  <span class="kb-label">启用:</span>
+                <el-button type="danger" size="small" text @click="removePlugin(plugin.id)">
+                  <el-icon><Delete /></el-icon>
+                </el-button>
+              </div>
+            </div>
+          </div>
+        </el-card>
+
+        <!-- 知识库配置卡片 -->
+        <el-card class="section-card grid-item">
+          <template #header>
+            <div class="card-header">
+              <div class="card-title-wrapper">
+                <div class="card-icon kb-icon">
+                  <el-icon><FolderOpened /></el-icon>
+                </div>
+                <span class="card-title">知识库</span>
+                <el-tag size="small" type="info" round>{{ knowledgeBases.length }}</el-tag>
+              </div>
+              <el-button type="primary" size="small" @click="showKnowledgeBaseSelector">
+                <el-icon><Plus /></el-icon>
+                添加
+              </el-button>
+            </div>
+          </template>
+          <div class="knowledge-bases-config">
+            <el-empty v-if="knowledgeBases.length === 0" description="暂未关联知识库" :image-size="60">
+              <el-button type="primary" size="small" @click="showKnowledgeBaseSelector">添加知识库</el-button>
+            </el-empty>
+            <div v-else class="kb-compact-list">
+              <div
+                v-for="kb in knowledgeBases"
+                :key="kb.id"
+                class="kb-item"
+              >
+                <div class="kb-item-info">
+                  <span class="kb-item-name">{{ kb.knowledge_base_name }}</span>
+                  <el-tag size="small">{{ scopeTypeLabel(kb.scope_type) }}</el-tag>
                   <el-switch
                     v-model="kb.is_enabled"
-                    @change="updateKBConfig(kb)"
-                  />
-                </div>
-                <div class="kb-row">
-                  <span class="kb-label">返回结果数:</span>
-                  <el-input-number
-                    v-model="kb.top_k"
-                    :min="1"
-                    :max="20"
                     size="small"
                     @change="updateKBConfig(kb)"
                   />
-                  <span class="kb-tip">（返回最相关的N条）</span>
                 </div>
-                <div class="kb-row">
-                  <span class="kb-label">相似度阈值:</span>
-                  <el-slider
-                    v-model="kb.similarity_threshold"
-                    :min="0.3"
-                    :max="1.0"
-                    :step="0.05"
-                    :format-tooltip="(val) => `${(val * 100).toFixed(0)}%`"
-                    style="width: 150px; margin: 0 10px;"
-                    @change="updateKBConfig(kb)"
-                  />
-                  <span class="kb-value">{{ (kb.similarity_threshold * 100).toFixed(0) }}%</span>
-                  <el-popover
-                    placement="top"
-                    width="250"
-                    trigger="hover"
-                  >
-                    <template #reference>
-                      <el-icon style="margin-left: 5px; cursor: help;"><QuestionFilled /></el-icon>
-                    </template>
-                    <div style="font-size: 13px; line-height: 1.6;">
-                      <p><strong>相似度阈值说明：</strong></p>
-                      <p>• 80-100%：极高相关（严格）</p>
-                      <p>• 70-80%：高相关（推荐）</p>
-                      <p>• 60-70%：中等相关</p>
-                      <p>• <60%：低相关（宽松）</p>
-                    </div>
-                  </el-popover>
-                </div>
-                <div class="kb-row">
-                  <span class="kb-label">文档:</span>
-                  <span>{{ kb.document_count || 0 }} 个</span>
-                </div>
+                <el-button type="danger" size="small" text @click="removeKnowledgeBase(kb.knowledge_base_uuid)">
+                  <el-icon><Delete /></el-icon>
+                </el-button>
               </div>
-            </el-card>
+            </div>
           </div>
-        </div>
-      </el-card>
+        </el-card>
+      </div>
     </div>
 
     <!-- 插件选择对话框 -->
@@ -374,7 +296,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Document, Plus, Delete, Search, QuestionFilled } from '@element-plus/icons-vue'
+import { Document, Plus, Delete, Search, QuestionFilled, ArrowLeft, Setting, ChatDotRound, Connection, FolderOpened } from '@element-plus/icons-vue'
 import { getAgent, updateAgent } from '@/api/agent'
 import { getPlugins } from '@/api/plugin'
 import { getActiveLLMModels } from '@/api/llm-model'
@@ -729,22 +651,90 @@ onMounted(() => {
 
 <style scoped>
 .agent-editor {
-  padding: 20px;
+  padding: 16px 20px;
+  min-height: calc(100vh - 120px);
+  background: #f5f7fa;
+}
+
+/* 顶部栏样式 */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.back-btn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 8px;
+  color: #606266;
+}
+
+.back-btn:hover {
+  background: #f5f7fa;
+  color: #409eff;
+}
+
+.title-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .editor-content {
-  margin-top: 20px;
-  display: flex;
-  flex-direction: column;
+  margin-top: 16px;
+}
+
+/* 2x2 网格布局 */
+.grid-layout {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 20px;
 }
 
+/* 响应式：小屏幕变为单列 */
+@media (max-width: 1200px) {
+  .grid-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.grid-item {
+  min-height: 280px;
+}
+
 .section-card {
-  transition: box-shadow 0.3s;
+  height: 100%;
+  transition: all 0.3s ease;
+  border-radius: 8px;
 }
 
 .section-card:hover {
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.1);
 }
 
 .card-header {
@@ -753,70 +743,139 @@ onMounted(() => {
   align-items: center;
 }
 
-.card-title {
+.card-title-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.card-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
   font-size: 16px;
+}
+
+.card-icon.basic-icon {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.card-icon.prompt-icon {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.card-icon.plugin-icon {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.card-icon.kb-icon {
+  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+}
+
+.card-title {
+  font-size: 15px;
   font-weight: 600;
   color: #303133;
 }
 
+/* 提示词编辑器 */
 .prompt-editor {
-  padding: 10px 0;
+  height: 100%;
 }
 
 .prompt-textarea :deep(.el-textarea__inner) {
   font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
   line-height: 1.6;
+  resize: none;
 }
 
-.prompt-tips {
-  margin-top: 15px;
-}
-
-.prompt-tips ul {
-  margin: 10px 0 0 0;
-  padding-left: 20px;
-}
-
-.prompt-tips li {
-  margin: 5px 0;
-}
-
+/* 插件紧凑列表 */
 .plugins-config {
-  padding: 10px 0;
+  height: 100%;
 }
 
-.plugins-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 15px;
+.plugins-compact-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 200px;
+  overflow-y: auto;
 }
 
-.plugin-card {
-  cursor: default;
-}
-
-.plugin-card-header {
+.plugin-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 10px 12px;
+  background: #f5f7fa;
+  border-radius: 6px;
+  transition: all 0.2s;
 }
 
-.plugin-name {
-  font-weight: 500;
-  font-size: 15px;
+.plugin-item:hover {
+  background: #eef2f6;
 }
 
-.plugin-description {
-  margin-bottom: 10px;
-  color: #606266;
-  font-size: 13px;
-}
-
-.plugin-meta {
+.plugin-item-info {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 10px;
 }
 
+.plugin-item-name {
+  font-weight: 500;
+  font-size: 14px;
+  color: #303133;
+}
+
+/* 知识库紧凑列表 */
+.knowledge-bases-config {
+  height: 100%;
+}
+
+.kb-compact-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.kb-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: #f5f7fa;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.kb-item:hover {
+  background: #eef2f6;
+}
+
+.kb-item-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.kb-item-name {
+  font-weight: 500;
+  font-size: 14px;
+  color: #303133;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 模板列表 */
 .template-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -845,77 +904,12 @@ onMounted(() => {
   color: #909399;
 }
 
-/* 知识库配置相关样式 */
-.knowledge-bases-config {
-  min-height: 100px;
+/* 空状态调整 */
+:deep(.el-empty) {
+  padding: 20px 0;
 }
 
-.knowledge-bases-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 15px;
-}
-
-.kb-card {
-  cursor: default;
-}
-
-.kb-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.kb-name {
-  font-weight: 500;
-  font-size: 15px;
-}
-
-.kb-info {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.kb-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 14px;
-  margin-bottom: 12px;
-}
-
-.kb-row:last-child {
-  margin-bottom: 0;
-}
-
-.kb-label {
-  font-weight: 500;
-  color: #606266;
-  min-width: 60px;
-}
-
-.kb-tip {
-  font-size: 12px;
-  color: #909399;
-  margin-left: 5px;
-}
-
-.kb-value {
-  font-weight: 600;
-  color: #409eff;
-  font-size: 14px;
-  min-width: 40px;
-  text-align: right;
-}
-
-.kb-status {
-  margin-left: 5px;
-  color: #67c23a;
-}
-
-.kb-status:not(.is-enabled) {
-  color: #909399;
+:deep(.el-empty__description) {
+  margin-top: 10px;
 }
 </style>
-

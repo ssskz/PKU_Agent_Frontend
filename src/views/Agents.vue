@@ -9,7 +9,6 @@
         </div>
         <div class="header-actions">
           <el-button type="primary" icon="Plus" @click="addAgent">
-            <el-icon><Plus /></el-icon>
             添加智能体
           </el-button>
         </div>
