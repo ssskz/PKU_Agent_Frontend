@@ -18,8 +18,8 @@
                   <Monitor />
                 </el-icon>
               </div>
-              <h1 class="brand-name">CodeHubot</h1>
-              <p class="brand-slogan">智能物联网管理平台</p>
+              <h1 class="brand-name">PKU-RAG Agent</h1>
+              <p class="brand-slogan">北京大学智能体平台</p>
             </div>
             
             <div class="features">
@@ -150,7 +150,7 @@
 
     <!-- 页脚 -->
     <div class="page-footer">
-      <p>© 2024 CodeHubot. All Rights Reserved.</p>
+      <p>© 2024 PKU-RAG Agent. All Rights Reserved.</p>
     </div>
   </div>
 </template>
@@ -195,7 +195,7 @@ const handleLogin = async () => {
       try {
         await userStore.loginUser(loginForm.email, loginForm.password)
         ElMessage.success('登录成功！')
-        await router.push('/agents')
+        await router.push('/dashboard')
       } catch (error) {
         logger.error('登录失败:', error)
         ElMessage.error('登录失败，请检查用户名/邮箱和密码')

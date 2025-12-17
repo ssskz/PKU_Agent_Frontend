@@ -5,7 +5,7 @@ import logger from '../utils/logger'
 const routes = [
   {
     path: '/',
-    redirect: '/agents'
+    redirect: '/dashboard'
   },
   {
     path: '/login',
@@ -34,101 +34,6 @@ const routes = [
         path: 'dashboard',
         name: 'Dashboard',
         component: () => import('../views/Dashboard.vue'),
-        meta: { requiresAuth: true }
-      },
-      // 产品管理
-      {
-        path: 'products',
-        name: 'Products',
-        component: () => import('../views/Products.vue'),
-        meta: { requiresAuth: true }
-      },
-
-      // 设备管理
-      {
-        path: 'devices',
-        name: 'Devices',
-        component: () => import('../views/Devices.vue'),
-        meta: { requiresAuth: true }
-      },
-      {
-        path: 'device-register',
-        name: 'DeviceRegister',
-        component: () => import('../views/DeviceRegister.vue'),
-        meta: { requiresAuth: true }
-      },
-      {
-        path: 'device-status',
-        name: 'DeviceStatus',
-        component: () => import('../views/DeviceStatus.vue'),
-        meta: { requiresAuth: true }
-      },
-      {
-        path: 'device-types',
-        name: 'DeviceTypes',
-        component: () => import('../views/Products.vue'),
-        meta: { requiresAuth: true }
-      },
-      {
-        path: 'device-groups',
-        name: 'DeviceGroups',
-        component: () => import('../views/DeviceGroups.vue'),
-        meta: { requiresAuth: true }
-      },
-      {
-        path: 'device/:uuid',
-        name: 'DeviceDetail',
-        component: () => import('../views/DeviceDetailNew.vue'),
-        meta: { requiresAuth: true }
-      },
-      // 基于UUID的设备功能页面
-      {
-        path: 'device/:uuid/realtime',
-        name: 'DeviceRealtimeData',
-        component: () => import('../views/DeviceRealtimeData.vue'),
-        meta: { requiresAuth: true }
-      },
-      {
-        path: 'device/:uuid/remote-control',
-        name: 'DeviceRemoteControl',
-        component: () => import('../views/DeviceRemoteControl.vue'),
-        meta: { requiresAuth: true }
-      },
-      {
-        path: 'device/:uuid/detail',
-        name: 'DeviceDetailInfo',
-        component: () => import('../views/DeviceDetailInfo.vue'),
-        meta: { requiresAuth: true }
-      },
-      {
-        path: 'device/:uuid/config',
-        name: 'DeviceConfigPage',
-        component: () => import('../views/DeviceConfigPage.vue'),
-        meta: { requiresAuth: true }
-      },
-      {
-        path: 'device-interactions',
-        name: 'DeviceInteractions',
-        component: () => import('../views/DeviceInteractions.vue'),
-        meta: { requiresAuth: true }
-      },
-      // 数据分析 (暂时禁用)
-      // {
-      //   path: 'data-overview',
-      //   name: 'DataOverview',
-      //   component: () => import('../views/DataOverview.vue'),
-      //   meta: { requiresAuth: true }
-      // },
-      {
-        path: 'data-charts',
-        name: 'DataCharts',
-        component: () => import('../views/DataCharts.vue'),
-        meta: { requiresAuth: true }
-      },
-      {
-        path: 'data-reports',
-        name: 'DataReports',
-        component: () => import('../views/DataReports.vue'),
         meta: { requiresAuth: true }
       },
       // 智能体管理
@@ -424,8 +329,8 @@ router.beforeEach(async (to, from, next) => {
   
   // 已登录用户访问登录/注册页，重定向到仪表盘
   if ((to.name === 'Login' || to.name === 'Register') && userStore.isLoggedIn) {
-    logger.debug('已登录用户访问登录/注册页，重定向到首页')
-    next('/agents')
+    logger.debug('已登录用户访问登录/注册页，重定向到Dashboard')
+    next('/dashboard')
     return
   }
   

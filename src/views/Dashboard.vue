@@ -1,240 +1,202 @@
 <template>
-  <div class="dashboard-content">
-    <!-- 欢迎横幅 -->
-    <div class="welcome-banner">
-      <div class="banner-content">
-        <div class="banner-text">
-          <h1>欢迎回来，{{ userStore.userInfo?.username || '用户' }}！</h1>
-          <p>今天是 {{ currentDate }}，系统运行正常</p>
+  <div class="tile-dashboard">
+    <!-- 欢迎区域 -->
+    <div class="welcome-section">
+      <div class="welcome-content">
+        <h1 class="welcome-title">你好，{{ displayName }} 👋</h1>
+        <p class="welcome-subtitle">{{ currentDate }} · 欢迎使用PKU-RAG智能体平台</p>
+      </div>
+      <div class="quick-stats">
+        <div class="quick-stat-item">
+          <span class="stat-number">{{ stats.totalDevices }}</span>
+          <span class="stat-label">设备总数</span>
         </div>
-        <div class="banner-actions">
-          <el-button type="primary" @click="$router.push('/device-register')">
-            <el-icon><Plus /></el-icon>
-            注册设备
-          </el-button>
-          <el-button @click="refreshData">
-            <el-icon><Refresh /></el-icon>
-            刷新数据
-          </el-button>
+        <div class="quick-stat-divider"></div>
+        <div class="quick-stat-item">
+          <span class="stat-number">{{ stats.onlineDevices }}</span>
+          <span class="stat-label">在线设备</span>
+        </div>
+        <div class="quick-stat-divider"></div>
+        <div class="quick-stat-item">
+          <span class="stat-number">{{ agentCount }}</span>
+          <span class="stat-label">智能体</span>
         </div>
       </div>
     </div>
 
-    <!-- 统计卡片 -->
-    <el-row :gutter="24" class="stats-row">
-      <el-col :xs="24" :sm="12" :md="6">
-        <el-card class="stat-card total-devices" shadow="hover">
-          <div class="stat-content">
-            <div class="stat-icon">
-              <el-icon size="32"><Monitor /></el-icon>
+    <!-- Windows 11风格磁贴网格 -->
+    <div class="tiles-container">
+      <!-- AI智能体模块 -->
+      <div class="tile-section">
+        <h2 class="section-title">
+          <el-icon><ChatDotRound /></el-icon>
+          <span>AI 智能体</span>
+        </h2>
+        <div class="tiles-grid">
+          <!-- 智能体管理 - 大卡片 -->
+          <div class="tile tile-large tile-gradient-purple" @click="navigateTo('/agents')">
+            <div class="tile-content">
+              <div class="tile-icon">
+                <el-icon :size="48"><ChatDotRound /></el-icon>
+              </div>
+              <div class="tile-info">
+                <h3 class="tile-title">智能体管理</h3>
+                <p class="tile-desc">创建和管理AI智能体</p>
+                <div class="tile-badge">{{ agentCount }} 个智能体</div>
+              </div>
             </div>
-            <div class="stat-info">
-              <div class="stat-number">{{ stats.totalDevices }}</div>
-              <div class="stat-label">总设备数</div>
-            </div>
+            <div class="tile-glow"></div>
           </div>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :sm="12" :md="6">
-        <el-card class="stat-card online-devices" shadow="hover">
-          <div class="stat-content">
-            <div class="stat-icon">
-              <el-icon size="32"><CircleCheck /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-number">{{ stats.onlineDevices }}</div>
-              <div class="stat-label">在线设备</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :sm="12" :md="6">
-        <el-card class="stat-card offline-devices" shadow="hover">
-          <div class="stat-content">
-            <div class="stat-icon">
-              <el-icon size="32"><CircleClose /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-number">{{ stats.offlineDevices }}</div>
-              <div class="stat-label">离线设备</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :sm="12" :md="6">
-        <el-card class="stat-card alerts" shadow="hover">
-          <div class="stat-content">
-            <div class="stat-icon">
-              <el-icon size="32"><Warning /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-number">{{ stats.alerts }}</div>
-              <div class="stat-label">告警数量</div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
 
-    <!-- 实时交互数据小组件 -->
-    <el-row :gutter="24" class="interaction-widgets">
-      <el-col :xs="24" :sm="12" :md="8">
-        <el-card class="interaction-card" shadow="hover">
-          <template #header>
-            <div class="card-header">
-              <span>今日交互统计</span>
-              <el-button type="text" @click="$router.push('/device-interactions')">查看详情</el-button>
-            </div>
-          </template>
-          <div class="interaction-stats">
-            <div class="stat-item">
-              <div class="stat-icon primary">
-                <el-icon><DataAnalysis /></el-icon>
+          <!-- 知识库管理 -->
+          <div class="tile tile-medium tile-gradient-blue" @click="navigateTo('/knowledge-bases')">
+            <div class="tile-content">
+              <div class="tile-icon">
+                <el-icon :size="40"><Collection /></el-icon>
               </div>
-              <div class="stat-content">
-                <div class="stat-value">{{ interactionStats.todayTotal.toLocaleString('zh-CN') }}</div>
-                <div class="stat-label">总交互次数</div>
+              <div class="tile-info">
+                <h3 class="tile-title">知识库</h3>
+                <p class="tile-desc">文档管理</p>
               </div>
             </div>
-            <div class="stat-item">
-              <div class="stat-icon success">
-                <el-icon><CircleCheck /></el-icon>
-              </div>
-              <div class="stat-content">
-                <div class="stat-value">{{ interactionStats.successRate }}%</div>
-                <div class="stat-label">成功率</div>
-              </div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-icon warning">
-                <el-icon><Timer /></el-icon>
-              </div>
-              <div class="stat-content">
-                <div class="stat-value">{{ interactionStats.avgResponseTime }}ms</div>
-                <div class="stat-label">平均响应时间</div>
-              </div>
-            </div>
+            <div class="tile-glow"></div>
           </div>
-        </el-card>
-      </el-col>
-      
-      <el-col :xs="24" :sm="12" :md="8">
-        <el-card class="interaction-card" shadow="hover">
-          <template #header>
-            <div class="card-header">
-              <span>数据传输统计</span>
-              <el-button type="text" @click="refreshInteractionData">
-                <el-icon><Refresh /></el-icon>
-              </el-button>
-            </div>
-          </template>
-          <div class="data-transfer-stats">
-            <div class="transfer-item">
-              <div class="transfer-label">今日上传</div>
-              <div class="transfer-value upload">{{ formatDataSize(interactionStats.todayUpload) }}</div>
-            </div>
-            <div class="transfer-item">
-              <div class="transfer-label">今日下载</div>
-              <div class="transfer-value download">{{ formatDataSize(interactionStats.todayDownload) }}</div>
-            </div>
-            <div class="transfer-item">
-              <div class="transfer-label">总传输量</div>
-              <div class="transfer-value total">{{ formatDataSize(interactionStats.totalTransfer) }}</div>
-            </div>
-            <div class="transfer-progress">
-              <div class="progress-label">今日传输进度</div>
-              <el-progress 
-                :percentage="interactionStats.transferProgress" 
-                :color="getProgressColor(interactionStats.transferProgress)"
-                :stroke-width="8"
-              />
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      
-      <el-col :xs="24" :sm="24" :md="8">
-        <el-card class="interaction-card" shadow="hover">
-          <template #header>
-            <div class="card-header">
-              <span>最近交互记录</span>
-              <el-button type="text" @click="$router.push('/device-interactions')">查看全部</el-button>
-            </div>
-          </template>
-          <div class="recent-interactions">
-            <div 
-              v-for="interaction in recentInteractions" 
-              :key="interaction.id"
-              class="interaction-item"
-            >
-              <div class="interaction-icon">
-                <el-icon :color="getInteractionIconColor(interaction.type)">
-                  <component :is="getInteractionIcon(interaction.type)" />
-                </el-icon>
-              </div>
-              <div class="interaction-content">
-                <div class="interaction-device">{{ interaction.deviceName }}</div>
-                <div class="interaction-desc">{{ interaction.description }}</div>
-                <div class="interaction-time">{{ interaction.timestamp }}</div>
-              </div>
-              <div class="interaction-status">
-                <el-tag 
-                  :type="interaction.status === 'success' ? 'success' : 'danger'"
-                  size="small"
-                >
-                  {{ interaction.status === 'success' ? '成功' : '失败' }}
-                </el-tag>
-              </div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
 
-    <!-- 最近设备 -->
-    <el-card class="recent-devices" shadow="hover">
-      <template #header>
-        <div class="card-header">
-          <span>最近设备</span>
-          <el-button type="text" @click="$router.push('/devices')">查看全部</el-button>
+          <!-- 插件管理 -->
+          <div class="tile tile-medium tile-gradient-cyan" @click="navigateTo('/plugins')">
+            <div class="tile-content">
+              <div class="tile-icon">
+                <el-icon :size="40"><Connection /></el-icon>
+              </div>
+              <div class="tile-info">
+                <h3 class="tile-title">插件管理</h3>
+                <p class="tile-desc">OpenAPI插件</p>
+              </div>
+            </div>
+            <div class="tile-glow"></div>
+          </div>
+
+          <!-- 模型配置 -->
+          <div class="tile tile-small tile-gradient-indigo" @click="navigateTo('/llm-models')" v-if="canAccessLLMModels">
+            <div class="tile-content">
+              <div class="tile-icon">
+                <el-icon :size="32"><TrendCharts /></el-icon>
+              </div>
+              <h3 class="tile-title-small">模型配置</h3>
+            </div>
+            <div class="tile-glow"></div>
+          </div>
         </div>
-      </template>
-      <el-table :data="recentDevices" style="width: 100%">
-        <el-table-column prop="name" label="设备名称" />
-        <el-table-column prop="type" label="产品类型" />
-        <el-table-column prop="status" label="状态">
-          <template #default="scope">
-            <el-tag :type="scope.row.status === 'online' ? 'success' : 'danger'">
-              {{ scope.row.status === 'online' ? '在线' : '离线' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="value" label="当前值" />
-        <el-table-column prop="location" label="位置" />
-        <el-table-column prop="lastSeen" label="最后上报" />
-        <el-table-column label="操作">
-          <template #default="scope">
-            <el-button type="text" @click="$router.push(`/device/${scope.row.uuid}/detail`)">
-              查看详情
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-    </el-card>
+      </div>
+
+      <!-- 设备管理模块 -->
+      <div class="tile-section">
+        <h2 class="section-title">
+          <el-icon><Monitor /></el-icon>
+          <span>设备管理</span>
+        </h2>
+        <div class="tiles-grid">
+          <!-- 设备注册 -->
+          <div class="tile tile-medium tile-gradient-green" @click="navigateTo('/device-register')">
+            <div class="tile-content">
+              <div class="tile-icon">
+                <el-icon :size="40"><Plus /></el-icon>
+              </div>
+              <div class="tile-info">
+                <h3 class="tile-title">设备注册</h3>
+                <p class="tile-desc">添加新设备</p>
+              </div>
+            </div>
+            <div class="tile-glow"></div>
+          </div>
+
+          <!-- 设备列表 -->
+          <div class="tile tile-large tile-gradient-blue-light" @click="navigateTo('/devices')">
+            <div class="tile-content">
+              <div class="tile-icon">
+                <el-icon :size="48"><List /></el-icon>
+              </div>
+              <div class="tile-info">
+                <h3 class="tile-title">设备列表</h3>
+                <p class="tile-desc">管理所有设备</p>
+                <div class="tile-stats">
+                  <span class="stat-item">
+                    <el-icon><CircleCheck /></el-icon>
+                    {{ stats.onlineDevices }} 在线
+                  </span>
+                  <span class="stat-item">
+                    <el-icon><CircleClose /></el-icon>
+                    {{ stats.offlineDevices }} 离线
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div class="tile-glow"></div>
+          </div>
+
+          <!-- 产品管理 -->
+          <div class="tile tile-small tile-gradient-orange" @click="navigateTo('/products')">
+            <div class="tile-content">
+              <div class="tile-icon">
+                <el-icon :size="32"><Box /></el-icon>
+              </div>
+              <h3 class="tile-title-small">产品管理</h3>
+            </div>
+            <div class="tile-glow"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 系统管理模块 -->
+      <div class="tile-section" v-if="canAccessSystemManagement">
+        <h2 class="section-title">
+          <el-icon><Setting /></el-icon>
+          <span>系统管理</span>
+        </h2>
+        <div class="tiles-grid">
+          <!-- 用户管理 -->
+          <div class="tile tile-medium tile-gradient-pink" @click="navigateTo('/users')" v-if="isPlatformAdmin">
+            <div class="tile-content">
+              <div class="tile-icon">
+                <el-icon :size="40"><UserFilled /></el-icon>
+              </div>
+              <div class="tile-info">
+                <h3 class="tile-title">用户管理</h3>
+                <p class="tile-desc">账户权限</p>
+              </div>
+            </div>
+            <div class="tile-glow"></div>
+          </div>
+
+          <!-- 系统配置 -->
+          <div class="tile tile-medium tile-gradient-gray" @click="navigateTo('/system-config')">
+            <div class="tile-content">
+              <div class="tile-icon">
+                <el-icon :size="40"><Setting /></el-icon>
+              </div>
+              <div class="tile-info">
+                <h3 class="tile-title">系统配置</h3>
+                <p class="tile-desc">参数设置</p>
+              </div>
+            </div>
+            <div class="tile-glow"></div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../store/user'
-import { getDashboardStats, getRecentDevices, getRecentInteractions } from '@/api/dashboard'
+import { getDashboardStats } from '@/api/dashboard'
 import { ElMessage } from 'element-plus'
 import logger from '../utils/logger'
 import {
-  House, Monitor, User, Bell, Setting, ArrowRight, ArrowDown, SwitchButton,
-  Plus, Refresh, CircleCheck, CircleClose, Warning, TrendCharts, DataAnalysis,
-  Timer, Upload, Download, Connection, Message
+  ChatDotRound, Collection, Connection, TrendCharts, Monitor, Plus, List,
+  Box, UserFilled, Setting, CircleCheck, CircleClose
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -248,24 +210,15 @@ const stats = reactive({
   alerts: 0
 })
 
-const recentDevices = ref([])
-const loading = ref(false)
-const refreshTimer = ref(null)
-
-// 交互数据相关
-const interactionStats = reactive({
-  todayTotal: 0,
-  successRate: 0,
-  avgResponseTime: 0,
-  todayUpload: 0,
-  todayDownload: 0,
-  totalTransfer: 0,
-  transferProgress: 0
-})
-
-const recentInteractions = ref([])
+const agentCount = ref(0)
 
 // 计算属性
+const displayName = computed(() => {
+  const user = userStore.userInfo
+  if (!user) return '用户'
+  return user.real_name || user.nickname || user.username || '用户'
+})
+
 const currentDate = computed(() => {
   return new Date().toLocaleDateString('zh-CN', {
     year: 'numeric',
@@ -275,633 +228,613 @@ const currentDate = computed(() => {
   })
 })
 
-// 方法
-const refreshData = () => {
-  loadDashboardData()
+// 权限判断
+const userRole = computed(() => userStore.userInfo?.role || 'individual')
+const isPlatformAdmin = computed(() => userRole.value === 'platform_admin')
+const canAccessSystemManagement = computed(() => isPlatformAdmin.value || userStore.isSuperUser)
+const canAccessLLMModels = computed(() => isPlatformAdmin.value || userStore.isAdmin)
+
+// 导航方法
+const navigateTo = (path) => {
+  router.push(path)
 }
 
-// 防抖函数
-const debounce = (func, wait) => {
-  let timeout
-  return function executedFunction(...args) {
-    const later = () => {
-      clearTimeout(timeout)
-      func(...args)
-    }
-    clearTimeout(timeout)
-    timeout = setTimeout(later, wait)
-  }
-}
-
-// 加载仪表盘数据
-const loadDashboardData = async (showLoading = true) => {
-  if (showLoading) {
-    loading.value = true
-  }
-  
+// 加载数据
+const loadDashboardData = async () => {
   try {
-    // 获取仪表盘统计数据
-    const statsResponse = await getDashboardStats()
-    // API可能直接返回对象，也可能包装在data中
-    const statsData = statsResponse.data || statsResponse
-    if (statsData) {
-      stats.totalDevices = statsData.total_devices || 0
-      stats.onlineDevices = statsData.online_devices || 0
-      stats.offlineDevices = statsData.offline_devices || 0
-      stats.alerts = statsData.alerts || 0
-    }
-
-    // 获取最近设备列表
-    const devicesResponse = await getRecentDevices(5)
-    // API可能直接返回数组，也可能包装在data中
-    const devicesData = Array.isArray(devicesResponse) ? devicesResponse : (devicesResponse.data || [])
-    if (devicesData && Array.isArray(devicesData) && devicesData.length > 0) {
-      recentDevices.value = devicesData.map(device => ({
-        id: device.id,
-        name: device.name,
-        type: device.product_name || '未分配',
-        status: device.is_online ? 'online' : 'offline',
-        lastSeen: device.last_seen ? new Date(device.last_seen).toLocaleString('zh-CN') : '未知',
-        value: device.is_online ? '正常' : '离线',
-        location: device.location || '未设置'
-      }))
-    } else {
-      // 如果没有数据，清空列表
-      recentDevices.value = []
+    const response = await getDashboardStats()
+    const data = response.data || response
+    if (data) {
+      stats.totalDevices = data.total_devices || 0
+      stats.onlineDevices = data.online_devices || 0
+      stats.offlineDevices = data.offline_devices || 0
+      stats.alerts = data.alerts || 0
+      agentCount.value = data.agent_count || 0
     }
   } catch (error) {
     logger.error('加载仪表盘数据失败:', error)
-    ElMessage.error('加载仪表盘数据失败')
-  } finally {
-    loading.value = false
   }
 }
 
-// 防抖的刷新函数
-const debouncedRefresh = debounce(() => {
-  loadDashboardData(false)
-}, 300)
-
-// 自动刷新
-const startAutoRefresh = () => {
-  refreshTimer.value = setInterval(() => {
-    loadDashboardData(false)
-  }, 30000) // 30秒刷新一次
-}
-
-const stopAutoRefresh = () => {
-  if (refreshTimer.value) {
-    clearInterval(refreshTimer.value)
-    refreshTimer.value = null
-  }
-}
-
-// 手动刷新
-const handleRefresh = () => {
-  debouncedRefresh()
-}
-
-// 加载交互数据
-const loadInteractionData = async () => {
-  try {
-    // 获取最近交互记录
-    const interactionsResponse = await getRecentInteractions(10)
-    // API可能直接返回数组，也可能包装在data中
-    const interactionsData = Array.isArray(interactionsResponse) ? interactionsResponse : (interactionsResponse.data || [])
-    if (interactionsData && Array.isArray(interactionsData) && interactionsData.length > 0) {
-      recentInteractions.value = interactionsData.map(interaction => ({
-        id: interaction.id,
-        deviceName: interaction.device_name,
-        type: interaction.type,
-        description: interaction.description,
-        timestamp: formatTimestamp(interaction.timestamp),
-        status: interaction.status
-      }))
-      
-      // 计算统计数据
-      const total = recentInteractions.value.length
-      const successCount = recentInteractions.value.filter(i => i.status === 'success').length
-      
-      // 如果没有数据，所有统计都设为0
-      if (total === 0) {
-        interactionStats.todayTotal = 0
-        interactionStats.successRate = 0
-        interactionStats.avgResponseTime = 0
-        interactionStats.todayUpload = 0
-        interactionStats.todayDownload = 0
-        interactionStats.totalTransfer = 0
-        interactionStats.transferProgress = 0
-      } else {
-        interactionStats.todayTotal = total
-        interactionStats.successRate = Math.round((successCount / total) * 100)
-        interactionStats.avgResponseTime = 0 // 暂时设为0，后续可以从API获取真实数据
-        interactionStats.todayUpload = 0 // 暂时设为0，后续可以从API获取真实数据
-        interactionStats.todayDownload = 0 // 暂时设为0，后续可以从API获取真实数据
-        interactionStats.totalTransfer = 0 // 暂时设为0，后续可以从API获取真实数据
-        interactionStats.transferProgress = 0 // 暂时设为0，后续可以从API获取真实数据
-      }
-    } else {
-      // 如果没有数据，清空列表和统计
-      recentInteractions.value = []
-      interactionStats.todayTotal = 0
-      interactionStats.successRate = 0
-      interactionStats.avgResponseTime = 0
-      interactionStats.todayUpload = 0
-      interactionStats.todayDownload = 0
-      interactionStats.totalTransfer = 0
-      interactionStats.transferProgress = 0
-    }
-  } catch (error) {
-    logger.error('加载交互数据失败:', error)
-    ElMessage.error('加载交互数据失败')
-  }
-}
-
-// 刷新交互数据
-const refreshInteractionData = () => {
-  loadInteractionData()
-}
-
-// 格式化时间戳
-const formatTimestamp = (timestamp) => {
-  if (!timestamp) return '未知'
-  const date = new Date(timestamp)
-  const now = new Date()
-  const diff = now - date
-  
-  if (diff < 60000) { // 小于1分钟
-    return '刚刚'
-  } else if (diff < 3600000) { // 小于1小时
-    return `${Math.floor(diff / 60000)}分钟前`
-  } else if (diff < 86400000) { // 小于1天
-    return `${Math.floor(diff / 3600000)}小时前`
-  } else {
-    return date.toLocaleString('zh-CN')
-  }
-}
-
-// 格式化数据大小
-const formatDataSize = (bytes) => {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-}
-
-// 获取进度条颜色
-const getProgressColor = (percentage) => {
-  if (percentage < 30) return '#67c23a'
-  if (percentage < 70) return '#e6a23c'
-  return '#f56c6c'
-}
-
-// 获取交互类型图标
-const getInteractionIcon = (type) => {
-  const iconMap = {
-    'data_upload': Upload,
-    'data_download': Download,
-    'command': Setting,
-    'heartbeat': Connection,
-    'message': Message
-  }
-  return iconMap[type] || DataAnalysis
-}
-
-// 获取交互图标颜色
-const getInteractionIconColor = (type) => {
-  const colorMap = {
-    'data_upload': '#67c23a',
-    'data_download': '#409eff',
-    'command': '#e6a23c',
-    'heartbeat': '#909399',
-    'message': '#f56c6c'
-  }
-  return colorMap[type] || '#409eff'
-}
-
-onMounted(async () => {
-  await nextTick()
-  await loadDashboardData()
-  await loadInteractionData()
-  startAutoRefresh()
-})
-
-onUnmounted(() => {
-  stopAutoRefresh()
+onMounted(() => {
+  loadDashboardData()
 })
 </script>
 
 <style scoped>
-.dashboard-content {
-  max-width: 1400px;
+/* ========== 磁贴式仪表板 ========== */
+.tile-dashboard {
+  max-width: 1600px;
   margin: 0 auto;
+  padding: 0;
 }
 
-/* 欢迎横幅 */
-.welcome-banner {
+/* ========== 欢迎区域 - 增强版 ========== */
+.welcome-section {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 16px;
-  padding: 32px;
-  margin-bottom: 24px;
+  border-radius: 24px;
+  padding: 48px;
+  margin-bottom: 40px;
   color: white;
   position: relative;
   overflow: hidden;
+  box-shadow: 
+    0 24px 64px rgba(102, 126, 234, 0.35),
+    0 8px 24px rgba(102, 126, 234, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  animation: welcomeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.welcome-banner::before {
+@keyframes welcomeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.welcome-section::before {
   content: '';
   position: absolute;
-  top: 0;
-  right: 0;
-  width: 200px;
-  height: 200px;
-  background: rgba(255, 255, 255, 0.1);
+  top: -50%;
+  right: -10%;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.12) 0%, transparent 70%);
   border-radius: 50%;
-  transform: translate(50%, -50%);
+  animation: float 6s ease-in-out infinite;
 }
 
-.banner-content {
+@keyframes float {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-20px, 20px) scale(1.05);
+  }
+}
+
+.welcome-section::after {
+  content: '';
+  position: absolute;
+  bottom: -30%;
+  left: -5%;
+  width: 350px;
+  height: 350px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: float 8s ease-in-out infinite reverse;
+}
+
+.welcome-content {
+  position: relative;
+  z-index: 1;
+  margin-bottom: 28px;
+}
+
+.welcome-title {
+  margin: 0 0 12px 0;
+  font-size: 2.5rem;
+  font-weight: 900;
+  letter-spacing: -0.8px;
+  text-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  animation: titleSlide 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.2s backwards;
+}
+
+@keyframes titleSlide {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.welcome-subtitle {
+  margin: 0;
+  font-size: 1.05rem;
+  opacity: 0.92;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  animation: subtitleSlide 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.3s backwards;
+}
+
+@keyframes subtitleSlide {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 0.92;
+    transform: translateX(0);
+  }
+}
+
+.quick-stats {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 40px;
   position: relative;
   z-index: 1;
 }
 
-.banner-text h1 {
-  margin: 0 0 8px 0;
-  font-size: 2rem;
-  font-weight: 700;
-}
-
-.banner-text p {
-  margin: 0;
-  opacity: 0.9;
-  font-size: 1rem;
-}
-
-.banner-actions {
+.quick-stat-item {
   display: flex;
-  gap: 12px;
-}
-
-/* 统计卡片 */
-.stats-row {
-  margin-bottom: 24px;
-}
-
-.stat-card {
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 16px 20px;
+  background: rgba(255, 255, 255, 0.12);
   border-radius: 16px;
-  border: none;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  min-width: 120px;
   transition: all 0.3s ease;
-  overflow: hidden;
-  position: relative;
+  animation: statIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) backwards;
 }
 
-.stat-card:hover {
+.quick-stat-item:nth-child(1) { animation-delay: 0.4s; }
+.quick-stat-item:nth-child(3) { animation-delay: 0.5s; }
+.quick-stat-item:nth-child(5) { animation-delay: 0.6s; }
+
+@keyframes statIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.quick-stat-item:hover {
+  background: rgba(255, 255, 255, 0.18);
   transform: translateY(-4px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
-.stat-card::before {
+.stat-number {
+  font-size: 2.3rem;
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.stat-label {
+  font-size: 0.88rem;
+  opacity: 0.88;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.quick-stat-divider {
+  width: 2px;
+  height: 48px;
+  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  border-radius: 1px;
+}
+
+/* ========== 磁贴容器 ========== */
+.tiles-container {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.tile-section {
+  animation: fadeInUp 0.6s ease-out backwards;
+}
+
+.tile-section:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.tile-section:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 20px 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.section-title .el-icon {
+  font-size: 24px;
+  color: #667eea;
+}
+
+/* ========== 磁贴网格 ========== */
+.tiles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+  grid-auto-flow: dense;
+}
+
+/* ========== 磁贴基础样式 - 增强版 ========== */
+.tile {
+  border-radius: 20px;
+  padding: 32px;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+.tile::before {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+  bottom: 0;
+  background: 
+    url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="rgba(255,255,255,0.15)"/></pattern></defs><rect width="100" height="100" fill="url(%23dots)" /></svg>'),
+    radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+  opacity: 0.6;
+  pointer-events: none;
 }
 
-.stat-card.total-devices::before {
-  background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+.tile::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
 }
 
-.stat-card.online-devices::before {
-  background: linear-gradient(90deg, #10b981, #059669);
-}
-
-.stat-card.offline-devices::before {
-  background: linear-gradient(90deg, #ef4444, #dc2626);
-}
-
-.stat-card.alerts::before {
-  background: linear-gradient(90deg, #f59e0b, #d97706);
-}
-
-.stat-content {
-  display: flex;
-  align-items: center;
-  padding: 24px;
+.tile-content {
+  position: relative;
+  z-index: 2;
   height: 100%;
-}
-
-.stat-icon {
-  width: 64px;
-  height: 64px;
-  border-radius: 16px;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 16px;
-  background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+  flex-direction: column;
 }
 
-.stat-card.total-devices .stat-icon {
-  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
-  color: #1d4ed8;
+.tile-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
+  transform: translate(-50%, -50%) scale(0);
+  transition: transform 0.6s ease;
+  pointer-events: none;
+  z-index: 1;
 }
 
-.stat-card.online-devices .stat-icon {
-  background: linear-gradient(135deg, #d1fae5, #a7f3d0);
-  color: #059669;
+.tile:hover {
+  transform: translateY(-10px) scale(1.03);
+  box-shadow: 
+    0 24px 48px rgba(0, 0, 0, 0.18),
+    0 8px 16px rgba(0, 0, 0, 0.12),
+    0 0 0 1px rgba(255, 255, 255, 1);
+  border-color: rgba(255, 255, 255, 1);
 }
 
-.stat-card.offline-devices .stat-icon {
-  background: linear-gradient(135deg, #fee2e2, #fecaca);
-  color: #dc2626;
+.tile:hover::after {
+  opacity: 1;
 }
 
-.stat-card.alerts .stat-icon {
-  background: linear-gradient(135deg, #fef3c7, #fde68a);
-  color: #d97706;
+.tile:hover .tile-glow {
+  transform: translate(-50%, -50%) scale(1);
 }
 
-.stat-info {
+.tile:hover .tile-icon {
+  transform: scale(1.1) rotate(5deg);
+}
+
+.tile:active {
+  transform: translateY(-6px) scale(0.98);
+  box-shadow: 
+    0 16px 32px rgba(0, 0, 0, 0.15),
+    0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* ========== 磁贴尺寸 ========== */
+.tile-small {
+  grid-column: span 1;
+  min-height: 140px;
+}
+
+.tile-medium {
+  grid-column: span 1;
+  min-height: 180px;
+}
+
+.tile-large {
+  grid-column: span 2;
+  min-height: 200px;
+}
+
+/* ========== 磁贴渐变色主题 ========== */
+.tile-gradient-purple {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.tile-gradient-blue {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  color: white;
+}
+
+.tile-gradient-cyan {
+  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+  color: white;
+}
+
+.tile-gradient-indigo {
+  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+  color: #1e293b;
+}
+
+.tile-gradient-green {
+  background: linear-gradient(135deg, #0ba360 0%, #3cba92 100%);
+  color: white;
+}
+
+.tile-gradient-blue-light {
+  background: linear-gradient(135deg, #667eea 0%, #4facfe 100%);
+  color: white;
+}
+
+.tile-gradient-orange {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+}
+
+.tile-gradient-pink {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  color: white;
+}
+
+.tile-gradient-gray {
+  background: linear-gradient(135deg, #868f96 0%, #596164 100%);
+  color: white;
+}
+
+/* ========== 磁贴内容 - 增强版 ========== */
+.tile-icon {
+  margin-bottom: 16px;
+  opacity: 0.95;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
+}
+
+.tile-info {
   flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
-.stat-number {
-  font-size: 2rem;
+.tile-title {
+  margin: 0 0 10px 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.3px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.tile-title-small {
+  margin: 10px 0 0 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+}
+
+.tile-desc {
+  margin: 0 0 auto 0;
+  font-size: 0.95rem;
+  opacity: 0.92;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+.tile-badge {
+  display: inline-block;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 24px;
+  font-size: 0.88rem;
   font-weight: 700;
-  color: #1e293b;
-  margin-bottom: 4px;
+  backdrop-filter: blur(10px);
+  margin-top: 14px;
+  align-self: flex-start;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
 }
 
-.stat-label {
-  color: #64748b;
-  font-size: 0.9rem;
-  margin-bottom: 8px;
+.tile:hover .tile-badge {
+  background: rgba(255, 255, 255, 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.stat-trend {
+.tile-stats {
   display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.8rem;
-}
-
-.trend-text {
-  font-weight: 600;
-}
-
-/* 设备列表 */
-.recent-devices {
-  border-radius: 16px;
-  border: none;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-weight: 600;
-  color: #1e293b;
-}
-
-/* 交互数据小组件样式 */
-.interaction-widgets {
-  margin-bottom: 24px;
-}
-
-.interaction-card {
-  border-radius: 16px;
-  border: none;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-  height: 100%;
-}
-
-.interaction-card .card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-weight: 600;
-  color: #1e293b;
-}
-
-/* 今日交互统计样式 */
-.interaction-stats {
-  padding: 16px 0;
+  gap: 18px;
+  margin-top: 14px;
+  font-size: 0.95rem;
+  opacity: 0.95;
 }
 
 .stat-item {
   display: flex;
   align-items: center;
-  margin-bottom: 16px;
-}
-
-.stat-item:last-child {
-  margin-bottom: 0;
-}
-
-.stat-item .stat-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 16px;
-  font-size: 20px;
-}
-
-.stat-icon.primary {
-  background: linear-gradient(135deg, #dbeafe, #bfdbfe);
-  color: #1d4ed8;
-}
-
-.stat-icon.success {
-  background: linear-gradient(135deg, #d1fae5, #a7f3d0);
-  color: #059669;
-}
-
-.stat-icon.warning {
-  background: linear-gradient(135deg, #fef3c7, #fde68a);
-  color: #d97706;
-}
-
-.stat-item .stat-content {
-  flex: 1;
-}
-
-.stat-value {
-  font-size: 1.5rem;
+  gap: 6px;
   font-weight: 700;
-  color: #1e293b;
-  margin-bottom: 4px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  backdrop-filter: blur(5px);
+  transition: all 0.3s ease;
 }
 
-.stat-item .stat-label {
-  color: #64748b;
-  font-size: 0.9rem;
+.tile:hover .stat-item {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
 }
 
-/* 数据传输统计样式 */
-.data-transfer-stats {
-  padding: 16px 0;
-}
-
-.transfer-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.transfer-label {
-  color: #64748b;
-  font-size: 0.9rem;
-}
-
-.transfer-value {
-  font-weight: 600;
-  font-size: 1rem;
-}
-
-.transfer-value.upload {
-  color: #059669;
-}
-
-.transfer-value.download {
-  color: #1d4ed8;
-}
-
-.transfer-value.total {
-  color: #1e293b;
-}
-
-.transfer-progress {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid #e2e8f0;
-}
-
-.progress-label {
-  color: #64748b;
-  font-size: 0.9rem;
-  margin-bottom: 8px;
-}
-
-/* 最近交互记录样式 */
-.recent-interactions {
-  padding: 16px 0;
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.interaction-item {
-  display: flex;
-  align-items: center;
-  padding: 12px 0;
-  border-bottom: 1px solid #f1f5f9;
-}
-
-.interaction-item:last-child {
-  border-bottom: none;
-}
-
-.interaction-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 12px;
-  background: #f8fafc;
-  font-size: 16px;
-}
-
-.interaction-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.interaction-device {
-  font-weight: 600;
-  color: #1e293b;
-  font-size: 0.9rem;
-  margin-bottom: 2px;
-}
-
-.interaction-desc {
-  color: #64748b;
-  font-size: 0.8rem;
-  margin-bottom: 2px;
-}
-
-.interaction-time {
-  color: #94a3b8;
-  font-size: 0.75rem;
-}
-
-.interaction-status {
-  margin-left: 8px;
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .banner-content {
-    flex-direction: column;
-    gap: 16px;
-    text-align: center;
+/* ========== 响应式设计 ========== */
+@media (max-width: 1200px) {
+  .tiles-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   }
   
-  .banner-text h1 {
+  .tile-large {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 900px) {
+  .tiles-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .tile-large {
+    grid-column: span 2;
+  }
+  
+  .tile-medium {
+    grid-column: span 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .welcome-section {
+    padding: 28px 24px;
+  }
+  
+  .welcome-title {
+    font-size: 1.8rem;
+  }
+  
+  .quick-stats {
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+  
+  .quick-stat-divider {
+    display: none;
+  }
+  
+  .tiles-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .tile-large,
+  .tile-medium,
+  .tile-small {
+    grid-column: span 1;
+    min-height: 160px;
+  }
+  
+  .tile {
+    padding: 24px;
+  }
+  
+  .section-title {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .welcome-section {
+    padding: 24px 20px;
+  }
+  
+  .welcome-title {
     font-size: 1.5rem;
   }
   
-  .stat-content {
-    padding: 16px;
+  .welcome-subtitle {
+    font-size: 0.9rem;
   }
   
   .stat-number {
     font-size: 1.5rem;
   }
-
-  .interaction-widgets .el-col {
-    margin-bottom: 16px;
-  }
-
-  .stat-item {
-    margin-bottom: 12px;
-  }
-
-  .stat-value {
-    font-size: 1.25rem;
-  }
-
-  .interaction-item {
-    padding: 8px 0;
-  }
-
-  .interaction-icon {
-    width: 36px;
-    height: 36px;
-    font-size: 14px;
+  
+  .stat-label {
+    font-size: 0.75rem;
   }
 }
 
-@media (max-width: 480px) {
-  .banner-actions {
-    flex-direction: column;
-    width: 100%;
+/* ========== 动画效果 ========== */
+.tile {
+  animation: tileIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+}
+
+.tile:nth-child(1) { animation-delay: 0.05s; }
+.tile:nth-child(2) { animation-delay: 0.1s; }
+.tile:nth-child(3) { animation-delay: 0.15s; }
+.tile:nth-child(4) { animation-delay: 0.2s; }
+.tile:nth-child(5) { animation-delay: 0.25s; }
+
+@keyframes tileIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
   }
-  
-  .banner-actions .el-button {
-    width: 100%;
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
   }
 }
 </style>
