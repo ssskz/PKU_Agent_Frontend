@@ -25,6 +25,13 @@ const routes = [
     component: () => import('../views/ForgotPassword.vue'),
     meta: { requiresAuth: false }
   },
+  // Chat页面 - 独立全屏页面，不使用MainLayout
+  {
+    path: '/agents/:uuid/chat',
+    name: 'Chat',
+    component: () => import('../views/Chat.vue'),
+    meta: { requiresAuth: true }
+  },
   {
     path: '/',
     component: () => import('../components/MainLayout.vue'),
@@ -47,12 +54,6 @@ const routes = [
         path: 'agents/:uuid/edit',
         name: 'AgentEditor',
         component: () => import('../views/AgentEditor.vue'),
-        meta: { requiresAuth: true }
-      },
-      {
-        path: 'agents/:uuid/chat',
-        name: 'Chat',
-        component: () => import('../views/Chat.vue'),
         meta: { requiresAuth: true }
       },
       // 知识库管理

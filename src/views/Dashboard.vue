@@ -8,16 +8,6 @@
       </div>
       <div class="quick-stats">
         <div class="quick-stat-item">
-          <span class="stat-number">{{ stats.totalDevices }}</span>
-          <span class="stat-label">设备总数</span>
-        </div>
-        <div class="quick-stat-divider"></div>
-        <div class="quick-stat-item">
-          <span class="stat-number">{{ stats.onlineDevices }}</span>
-          <span class="stat-label">在线设备</span>
-        </div>
-        <div class="quick-stat-divider"></div>
-        <div class="quick-stat-item">
           <span class="stat-number">{{ agentCount }}</span>
           <span class="stat-label">智能体</span>
         </div>
@@ -89,63 +79,7 @@
         </div>
       </div>
 
-      <!-- 设备管理模块 -->
-      <div class="tile-section">
-        <h2 class="section-title">
-          <el-icon><Monitor /></el-icon>
-          <span>设备管理</span>
-        </h2>
-        <div class="tiles-grid">
-          <!-- 设备注册 -->
-          <div class="tile tile-medium tile-gradient-green" @click="navigateTo('/device-register')">
-            <div class="tile-content">
-              <div class="tile-icon">
-                <el-icon :size="40"><Plus /></el-icon>
-              </div>
-              <div class="tile-info">
-                <h3 class="tile-title">设备注册</h3>
-                <p class="tile-desc">添加新设备</p>
-              </div>
-            </div>
-            <div class="tile-glow"></div>
-          </div>
-
-          <!-- 设备列表 -->
-          <div class="tile tile-large tile-gradient-blue-light" @click="navigateTo('/devices')">
-            <div class="tile-content">
-              <div class="tile-icon">
-                <el-icon :size="48"><List /></el-icon>
-              </div>
-              <div class="tile-info">
-                <h3 class="tile-title">设备列表</h3>
-                <p class="tile-desc">管理所有设备</p>
-                <div class="tile-stats">
-                  <span class="stat-item">
-                    <el-icon><CircleCheck /></el-icon>
-                    {{ stats.onlineDevices }} 在线
-                  </span>
-                  <span class="stat-item">
-                    <el-icon><CircleClose /></el-icon>
-                    {{ stats.offlineDevices }} 离线
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div class="tile-glow"></div>
-          </div>
-
-          <!-- 产品管理 -->
-          <div class="tile tile-small tile-gradient-orange" @click="navigateTo('/products')">
-            <div class="tile-content">
-              <div class="tile-icon">
-                <el-icon :size="32"><Box /></el-icon>
-              </div>
-              <h3 class="tile-title-small">产品管理</h3>
-            </div>
-            <div class="tile-glow"></div>
-          </div>
-        </div>
-      </div>
+      <!-- 设备管理模块 - 已隐藏 (后端已下线) -->
 
       <!-- 系统管理模块 -->
       <div class="tile-section" v-if="canAccessSystemManagement">
@@ -188,28 +122,20 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../store/user'
 import { getDashboardStats } from '@/api/dashboard'
-import { ElMessage } from 'element-plus'
 import logger from '../utils/logger'
 import {
-  ChatDotRound, Collection, Connection, TrendCharts, Monitor, Plus, List,
-  Box, UserFilled, Setting, CircleCheck, CircleClose
+  ChatDotRound, Collection, Connection, TrendCharts,
+  UserFilled, Setting
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
 
 // 响应式数据
-const stats = reactive({
-  totalDevices: 0,
-  onlineDevices: 0,
-  offlineDevices: 0,
-  alerts: 0
-})
-
 const agentCount = ref(0)
 
 // 计算属性
@@ -245,10 +171,6 @@ const loadDashboardData = async () => {
     const response = await getDashboardStats()
     const data = response.data || response
     if (data) {
-      stats.totalDevices = data.total_devices || 0
-      stats.onlineDevices = data.online_devices || 0
-      stats.offlineDevices = data.offline_devices || 0
-      stats.alerts = data.alerts || 0
       agentCount.value = data.agent_count || 0
     }
   } catch (error) {
