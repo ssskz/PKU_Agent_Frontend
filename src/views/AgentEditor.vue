@@ -408,7 +408,7 @@ const knowledgeBases = ref([])
 const selectedKBUuids = ref([])
 
 const agentUuid = computed(() => route.params.uuid)
-const pageTitle = computed(() => agentForm.name || '智能体编排')
+const pageTitle = computed(() => agentForm.name || '智能体编辑')
 
 const agentForm = reactive({
   id: null,

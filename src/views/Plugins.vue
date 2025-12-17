@@ -1,36 +1,44 @@
 <template>
   <div class="plugins-container">
-    <div class="page-header">
-      <h2>插件管理</h2>
-    </div>
-
-    <!-- 搜索和筛选 -->
-    <div class="filter-section">
-      <el-row :gutter="16">
-        <el-col :span="10">
-          <el-input
-            v-model="searchQuery"
-            placeholder="搜索插件名称"
-            clearable
-            @input="handleSearch"
-          >
-            <template #prefix>
-              <el-icon><Search /></el-icon>
-            </template>
-          </el-input>
-        </el-col>
-        <el-col :span="6">
-          <el-select v-model="filterStatus" placeholder="状态筛选" clearable @change="loadPlugins" style="width: 100%;">
-            <el-option label="激活" :value="1" />
-            <el-option label="禁用" :value="0" />
-          </el-select>
-        </el-col>
-        <el-col :span="8" style="text-align: right;">
-          <el-button @click="resetFilters">重置筛选</el-button>
-          <el-button type="primary" icon="Plus" @click="addPlugin">添加插件</el-button>
-          <el-button type="success" icon="Upload" @click="importFromFile">从文件导入</el-button>
-        </el-col>
-      </el-row>
+    <!-- 页面头部：标题 + 筛选 + 操作 -->
+    <div class="page-header-section">
+      <div class="header-top">
+        <div class="header-title">
+          <h2>插件管理</h2>
+          <span class="header-subtitle">管理和配置您的 API 插件</span>
+        </div>
+        <div class="header-actions">
+          <el-button @click="importFromFile" class="import-btn">
+            <el-icon><Upload /></el-icon>
+            从文件导入
+          </el-button>
+          <el-button type="primary" @click="addPlugin">
+            <el-icon><Plus /></el-icon>
+            添加插件
+          </el-button>
+        </div>
+      </div>
+      <div class="header-filters">
+        <el-input
+          v-model="searchQuery"
+          placeholder="搜索插件名称"
+          clearable
+          @input="handleSearch"
+          class="search-input"
+        >
+          <template #prefix>
+            <el-icon><Search /></el-icon>
+          </template>
+        </el-input>
+        <el-select v-model="filterStatus" placeholder="状态筛选" clearable @change="loadPlugins" class="status-select">
+          <el-option label="激活" :value="1" />
+          <el-option label="禁用" :value="0" />
+        </el-select>
+        <el-button @click="resetFilters" class="reset-btn">
+          <el-icon><RefreshLeft /></el-icon>
+          重置
+        </el-button>
+      </div>
     </div>
 
     <!-- 插件列表 - 卡片形式 -->
@@ -105,16 +113,21 @@
     </div>
 
     <!-- 分页 -->
-    <el-pagination
-      v-model:current-page="currentPage"
-      v-model:page-size="pageSize"
-      :page-sizes="[10, 20, 50, 100]"
-      :total="total"
-      layout="total, sizes, prev, pager, next, jumper"
-      @size-change="loadPlugins"
-      @current-change="loadPlugins"
-      style="margin-top: 20px; justify-content: flex-end;"
-    />
+    <div class="pagination-section">
+      <div class="pagination-info">
+        <span class="total-text">共 <strong>{{ total }}</strong> 个插件</span>
+      </div>
+      <el-pagination
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :page-sizes="[10, 20, 50, 100]"
+        :total="total"
+        layout="sizes, prev, pager, next, jumper"
+        @size-change="loadPlugins"
+        @current-change="loadPlugins"
+        class="custom-pagination"
+      />
+    </div>
 
     <!-- 编辑对话框 -->
     <el-dialog
@@ -202,7 +215,7 @@
 import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Plus, Upload, Connection, Document, Link, Clock, View, Edit, Delete } from '@element-plus/icons-vue'
+import { Search, Plus, Upload, Connection, Document, Link, Clock, View, Edit, Delete, RefreshLeft } from '@element-plus/icons-vue'
 import { getPlugins, createPlugin, updatePlugin, deletePlugin } from '../api/plugin'
 
 const router = useRouter()
@@ -477,18 +490,125 @@ onMounted(() => {
 
 <style scoped>
 .plugins-container {
-  padding: 20px;
+  /* 主布局已有 padding */
 }
 
-.page-header {
-  margin-bottom: 20px;
+/* 页面头部区域 */
+.page-header-section {
+  margin-bottom: 24px;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04), 0 1px 0 rgba(255, 255, 255, 0.8) inset;
 }
 
-.filter-section {
+.page-header-section .header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
-  padding: 16px;
-  background: #f5f7fa;
-  border-radius: 4px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+}
+
+.header-title h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.header-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin-top: 4px;
+  display: block;
+  font-weight: 500;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.header-actions .el-button[type="primary"] {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  color: #ffffff;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.import-btn {
+  background: rgba(248, 250, 252, 0.9);
+  border: 1.5px solid rgba(226, 232, 240, 0.8);
+  color: #64748b;
+  border-radius: 10px;
+}
+
+.import-btn:hover {
+  background: #ffffff;
+  border-color: #667eea;
+  color: #667eea;
+}
+
+.header-filters {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.search-input {
+  width: 300px;
+}
+
+.search-input :deep(.el-input__wrapper) {
+  background: rgba(248, 250, 252, 0.9);
+  border: 1.5px solid rgba(226, 232, 240, 0.8);
+  border-radius: 10px;
+  padding: 4px 12px;
+  transition: all 0.3s ease;
+}
+
+.search-input :deep(.el-input__wrapper:hover) {
+  background: #ffffff;
+  border-color: rgba(102, 126, 234, 0.4);
+}
+
+.search-input :deep(.el-input__wrapper.is-focus) {
+  background: #ffffff;
+  border-color: #667eea;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+}
+
+.status-select {
+  width: 140px;
+}
+
+.status-select :deep(.el-input__wrapper) {
+  background: rgba(248, 250, 252, 0.9);
+  border: 1.5px solid rgba(226, 232, 240, 0.8);
+  border-radius: 10px;
+}
+
+.reset-btn {
+  background: rgba(248, 250, 252, 0.9);
+  border: 1.5px solid rgba(226, 232, 240, 0.8);
+  color: #64748b;
+  border-radius: 10px;
+}
+
+.reset-btn:hover {
+  background: #ffffff;
+  border-color: #667eea;
+  color: #667eea;
 }
 
 .form-tip {
@@ -512,31 +632,34 @@ pre {
 /* 卡片网格布局 */
 .plugins-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
   margin-bottom: 20px;
 }
 
 /* 插件卡片 */
 .plugin-card {
-  border-radius: 12px;
+  border-radius: 20px;
   overflow: hidden;
-  transition: all 0.3s ease;
-  border: 1px solid #e4e7ed;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
 }
 
 .plugin-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  transform: translateY(-8px);
+  border-color: rgba(102, 126, 234, 0.3);
+  box-shadow: 0 20px 40px rgba(102, 126, 234, 0.15), 0 8px 16px rgba(0, 0, 0, 0.08);
 }
 
 /* 卡片头部 */
-.card-header {
+.plugin-card .card-header {
   padding: 20px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-.header-top {
+.plugin-card .header-top {
   display: flex;
   align-items: flex-start;
   gap: 12px;
@@ -545,13 +668,14 @@ pre {
 .plugin-icon {
   width: 48px;
   height: 48px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.2);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.25);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #ffffff;
   flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .plugin-info {
@@ -584,15 +708,13 @@ pre {
 .plugin-description {
   margin: 0 0 16px 0;
   font-size: 14px;
-  color: #606266;
+  color: #64748b;
   line-height: 1.6;
   min-height: 44px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
-  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .plugin-stats {
@@ -600,7 +722,7 @@ pre {
   flex-direction: column;
   gap: 8px;
   padding-top: 12px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid rgba(226, 232, 240, 0.6);
 }
 
 .stat-item {
@@ -608,24 +730,103 @@ pre {
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  color: #909399;
+  color: #94a3b8;
 }
 
 .stat-item .el-icon {
   font-size: 16px;
+  color: #667eea;
 }
 
 /* 卡片底部 */
 .card-footer {
-  padding: 12px 20px;
-  background: #f5f7fa;
+  padding: 16px 20px;
+  background: rgba(248, 250, 252, 0.8);
   display: flex;
   gap: 8px;
-  border-top: 1px solid #e4e7ed;
+  border-top: 1px solid rgba(226, 232, 240, 0.6);
 }
 
 .card-footer .el-button {
   flex: 1;
+  border-radius: 10px;
+}
+
+/* 分页区域样式 */
+.pagination-section {
+  margin-top: 32px;
+  padding: 20px 24px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+}
+
+.pagination-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.total-text {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.total-text strong {
+  color: #667eea;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.custom-pagination :deep(.el-pager li) {
+  background: rgba(248, 250, 252, 0.9);
+  border: 1.5px solid rgba(226, 232, 240, 0.8);
+  border-radius: 10px;
+  margin: 0 4px;
+  min-width: 36px;
+  height: 36px;
+  line-height: 34px;
+  font-weight: 600;
+}
+
+.custom-pagination :deep(.el-pager li:hover) {
+  color: #667eea;
+  border-color: rgba(102, 126, 234, 0.4);
+}
+
+.custom-pagination :deep(.el-pager li.is-active) {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.custom-pagination :deep(.btn-prev),
+.custom-pagination :deep(.btn-next) {
+  background: rgba(248, 250, 252, 0.9);
+  border: 1.5px solid rgba(226, 232, 240, 0.8);
+  border-radius: 10px;
+  min-width: 36px;
+  height: 36px;
+}
+
+.custom-pagination :deep(.el-select .el-input__wrapper) {
+  background: rgba(248, 250, 252, 0.9);
+  border: 1.5px solid rgba(226, 232, 240, 0.8);
+  border-radius: 10px;
+}
+
+.custom-pagination :deep(.el-pagination__jump .el-input__wrapper) {
+  background: rgba(248, 250, 252, 0.9);
+  border: 1.5px solid rgba(226, 232, 240, 0.8);
+  border-radius: 10px;
+  width: 60px;
 }
 
 /* 响应式设计 */
@@ -635,10 +836,66 @@ pre {
   }
 }
 
+@media (max-width: 992px) {
+  .header-filters {
+    flex-wrap: wrap;
+  }
+  
+  .search-input {
+    width: 100%;
+    min-width: 200px;
+  }
+}
+
 @media (max-width: 768px) {
   .plugins-grid {
     grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .page-header-section {
+    padding: 16px;
+    border-radius: 12px;
+  }
+  
+  .page-header-section .header-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .header-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+  
+  .header-actions .el-button {
+    width: 100%;
+  }
+  
+  .header-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .search-input,
+  .status-select {
+    width: 100%;
+  }
+  
+  .reset-btn {
+    width: 100%;
+  }
+  
+  .pagination-section {
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+    border-radius: 12px;
+  }
+  
+  .custom-pagination :deep(.el-pagination__jump) {
+    display: none;
   }
 }
 </style>
-

@@ -1,45 +1,48 @@
 <template>
   <div class="llm-models-container">
-    <div class="page-header">
-      <h2>大模型配置</h2>
-    </div>
-
-    <!-- 搜索和筛选 -->
-    <div class="filter-section">
-      <el-row :gutter="16">
-        <el-col :span="8">
-          <el-input
-            v-model="searchQuery"
-            placeholder="搜索模型名称"
-            clearable
-            @input="handleSearch"
-          >
-            <template #prefix>
-              <el-icon><Search /></el-icon>
-            </template>
-          </el-input>
-        </el-col>
-        <el-col :span="6">
-          <el-select v-model="filterProvider" placeholder="提供商筛选" clearable @change="loadModels" style="width: 100%;">
-            <el-option
-              v-for="provider in providers"
-              :key="provider.code"
-              :label="provider.name"
-              :value="provider.code"
-            />
-          </el-select>
-        </el-col>
-        <el-col :span="6">
-          <el-select v-model="filterStatus" placeholder="状态筛选" clearable @change="loadModels" style="width: 100%;">
-            <el-option label="激活" :value="1" />
-            <el-option label="禁用" :value="0" />
-          </el-select>
-        </el-col>
-        <el-col :span="4" style="text-align: right;">
-          <el-button @click="resetFilters">重置筛选</el-button>
-          <el-button type="primary" icon="Plus" @click="addModel">添加模型</el-button>
-        </el-col>
-      </el-row>
+    <!-- 页面头部：标题 + 筛选 + 操作 -->
+    <div class="page-header-section">
+      <div class="header-top">
+        <div class="header-title">
+          <h2>大模型配置</h2>
+          <span class="header-subtitle">管理和配置您的 AI 大语言模型</span>
+        </div>
+        <div class="header-actions">
+          <el-button type="primary" @click="addModel">
+            <el-icon><Plus /></el-icon>
+            添加模型
+          </el-button>
+        </div>
+      </div>
+      <div class="header-filters">
+        <el-input
+          v-model="searchQuery"
+          placeholder="搜索模型名称"
+          clearable
+          @input="handleSearch"
+          class="search-input"
+        >
+          <template #prefix>
+            <el-icon><Search /></el-icon>
+          </template>
+        </el-input>
+        <el-select v-model="filterProvider" placeholder="提供商筛选" clearable @change="loadModels" class="provider-select">
+          <el-option
+            v-for="provider in providers"
+            :key="provider.code"
+            :label="provider.name"
+            :value="provider.code"
+          />
+        </el-select>
+        <el-select v-model="filterStatus" placeholder="状态筛选" clearable @change="loadModels" class="status-select">
+          <el-option label="激活" :value="1" />
+          <el-option label="禁用" :value="0" />
+        </el-select>
+        <el-button @click="resetFilters" class="reset-btn">
+          <el-icon><RefreshLeft /></el-icon>
+          重置
+        </el-button>
+      </div>
     </div>
 
     <!-- 模型列表 - 卡片形式 -->
@@ -127,16 +130,21 @@
     </div>
 
     <!-- 分页 -->
-    <el-pagination
-      v-model:current-page="currentPage"
-      v-model:page-size="pageSize"
-      :page-sizes="[10, 20, 50, 100]"
-      :total="total"
-      layout="total, sizes, prev, pager, next, jumper"
-      @size-change="loadModels"
-      @current-change="loadModels"
-      style="margin-top: 20px; justify-content: flex-end;"
-    />
+    <div class="pagination-section">
+      <div class="pagination-info">
+        <span class="total-text">共 <strong>{{ total }}</strong> 个模型</span>
+      </div>
+      <el-pagination
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :page-sizes="[10, 20, 50, 100]"
+        :total="total"
+        layout="sizes, prev, pager, next, jumper"
+        @size-change="loadModels"
+        @current-change="loadModels"
+        class="custom-pagination"
+      />
+    </div>
 
     <!-- 添加/编辑对话框 -->
     <el-dialog
@@ -338,7 +346,7 @@
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Plus, TrendCharts, Document, DataLine, Sunny, View, Edit, Star, Delete, Link, Key, Warning, SuccessFilled } from '@element-plus/icons-vue'
+import { Search, Plus, TrendCharts, Document, DataLine, Sunny, View, Edit, Star, Delete, Link, Key, Warning, SuccessFilled, RefreshLeft } from '@element-plus/icons-vue'
 import { getLLMModels, createLLMModel, updateLLMModel, deleteLLMModel, setDefaultLLMModel, getLLMProviders } from '../api/llm-model'
 
 const loading = ref(false)
@@ -621,60 +629,147 @@ onMounted(() => {
 
 <style scoped>
 .llm-models-container {
-  padding: 20px;
+  /* 主布局已有 padding */
 }
 
-.page-header {
-  margin-bottom: 20px;
+/* 页面头部区域 */
+.page-header-section {
+  margin-bottom: 24px;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04), 0 1px 0 rgba(255, 255, 255, 0.8) inset;
 }
 
-.filter-section {
+.page-header-section .header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
-  padding: 16px;
-  background: #f5f7fa;
-  border-radius: 4px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+}
+
+.header-title h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.header-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin-top: 4px;
+  display: block;
+  font-weight: 500;
+}
+
+.header-actions .el-button[type="primary"] {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  color: #ffffff;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.header-filters {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.search-input {
+  width: 240px;
+}
+
+.search-input :deep(.el-input__wrapper) {
+  background: rgba(248, 250, 252, 0.9);
+  border: 1.5px solid rgba(226, 232, 240, 0.8);
+  border-radius: 10px;
+  padding: 4px 12px;
+  transition: all 0.3s ease;
+}
+
+.search-input :deep(.el-input__wrapper:hover) {
+  background: #ffffff;
+  border-color: rgba(102, 126, 234, 0.4);
+}
+
+.search-input :deep(.el-input__wrapper.is-focus) {
+  background: #ffffff;
+  border-color: #667eea;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+}
+
+.provider-select {
+  width: 160px;
+}
+
+.provider-select :deep(.el-input__wrapper),
+.status-select :deep(.el-input__wrapper) {
+  background: rgba(248, 250, 252, 0.9);
+  border: 1.5px solid rgba(226, 232, 240, 0.8);
+  border-radius: 10px;
+}
+
+.status-select {
+  width: 120px;
+}
+
+.reset-btn {
+  background: rgba(248, 250, 252, 0.9);
+  border: 1.5px solid rgba(226, 232, 240, 0.8);
+  color: #64748b;
+  border-radius: 10px;
+}
+
+.reset-btn:hover {
+  background: #ffffff;
+  border-color: #667eea;
+  color: #667eea;
 }
 
 /* 卡片网格布局 */
 .models-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-  gap: 20px;
+  gap: 24px;
   margin-bottom: 20px;
-}
-
-@media (max-width: 1400px) {
-  .models-grid {
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  }
-}
-
-@media (max-width: 768px) {
-  .models-grid {
-    grid-template-columns: 1fr;
-  }
 }
 
 /* 模型卡片样式 */
 .model-card {
-  transition: all 0.3s;
-  cursor: pointer;
+  border-radius: 20px;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
   height: 100%;
   display: flex;
   flex-direction: column;
 }
 
 .model-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  transform: translateY(-8px);
+  border-color: rgba(102, 126, 234, 0.3);
+  box-shadow: 0 20px 40px rgba(102, 126, 234, 0.15), 0 8px 16px rgba(0, 0, 0, 0.08);
 }
 
-.card-header {
+.model-card .card-header {
   padding: 20px;
-  border-bottom: 1px solid #ebeef5;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-.header-top {
+.model-card .header-top {
   display: flex;
   gap: 16px;
 }
@@ -682,13 +777,14 @@ onMounted(() => {
 .model-icon {
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
   flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .model-info {
@@ -699,7 +795,7 @@ onMounted(() => {
 .model-name {
   font-size: 18px;
   font-weight: 600;
-  color: #303133;
+  color: #ffffff;
   margin: 0 0 8px 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -718,25 +814,26 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  background: #ffffff;
 }
 
 .model-description {
   font-size: 14px;
-  color: #606266;
+  color: #64748b;
   line-height: 1.6;
   margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
-  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .model-stats {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(226, 232, 240, 0.6);
 }
 
 .stat-item {
@@ -744,26 +841,173 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   font-size: 13px;
-  color: #909399;
+  color: #94a3b8;
 }
 
 .stat-item .el-icon {
   font-size: 16px;
-  color: #409eff;
+  color: #667eea;
 }
 
 .card-footer {
-  padding: 12px 20px;
-  border-top: 1px solid #ebeef5;
+  padding: 16px 20px;
+  background: rgba(248, 250, 252, 0.8);
+  border-top: 1px solid rgba(226, 232, 240, 0.6);
   display: flex;
   gap: 8px;
-  justify-content: space-between;
   flex-wrap: wrap;
 }
 
 .card-footer .el-button {
   flex: 1;
-  min-width: 70px;
+  min-width: 60px;
+  border-radius: 10px;
+}
+
+/* 分页区域样式 */
+.pagination-section {
+  margin-top: 32px;
+  padding: 20px 24px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+}
+
+.pagination-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.total-text {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.total-text strong {
+  color: #667eea;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.custom-pagination :deep(.el-pager li) {
+  background: rgba(248, 250, 252, 0.9);
+  border: 1.5px solid rgba(226, 232, 240, 0.8);
+  border-radius: 10px;
+  margin: 0 4px;
+  min-width: 36px;
+  height: 36px;
+  line-height: 34px;
+  font-weight: 600;
+}
+
+.custom-pagination :deep(.el-pager li:hover) {
+  color: #667eea;
+  border-color: rgba(102, 126, 234, 0.4);
+}
+
+.custom-pagination :deep(.el-pager li.is-active) {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.custom-pagination :deep(.btn-prev),
+.custom-pagination :deep(.btn-next) {
+  background: rgba(248, 250, 252, 0.9);
+  border: 1.5px solid rgba(226, 232, 240, 0.8);
+  border-radius: 10px;
+  min-width: 36px;
+  height: 36px;
+}
+
+.custom-pagination :deep(.el-select .el-input__wrapper) {
+  background: rgba(248, 250, 252, 0.9);
+  border: 1.5px solid rgba(226, 232, 240, 0.8);
+  border-radius: 10px;
+}
+
+.custom-pagination :deep(.el-pagination__jump .el-input__wrapper) {
+  background: rgba(248, 250, 252, 0.9);
+  border: 1.5px solid rgba(226, 232, 240, 0.8);
+  border-radius: 10px;
+  width: 60px;
+}
+
+/* 响应式设计 */
+@media (max-width: 1400px) {
+  .models-grid {
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  }
+}
+
+@media (max-width: 992px) {
+  .header-filters {
+    flex-wrap: wrap;
+  }
+  
+  .search-input {
+    width: 100%;
+    min-width: 200px;
+  }
+}
+
+@media (max-width: 768px) {
+  .models-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .page-header-section {
+    padding: 16px;
+    border-radius: 12px;
+  }
+  
+  .page-header-section .header-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .header-actions {
+    width: 100%;
+  }
+  
+  .header-actions .el-button {
+    width: 100%;
+  }
+  
+  .header-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .search-input,
+  .provider-select,
+  .status-select {
+    width: 100%;
+  }
+  
+  .reset-btn {
+    width: 100%;
+  }
+  
+  .pagination-section {
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+    border-radius: 12px;
+  }
+  
+  .custom-pagination :deep(.el-pagination__jump) {
+    display: none;
+  }
 }
 </style>
-
