@@ -32,6 +32,13 @@ const routes = [
     component: () => import('../views/Chat.vue'),
     meta: { requiresAuth: true }
   },
+  // 工作流编辑器 - 独立全屏页面，不使用MainLayout
+  {
+    path: '/workflows/:uuid/edit',
+    name: 'WorkflowEditor',
+    component: () => import('../views/WorkflowEditor.vue'),
+    meta: { requiresAuth: true }
+  },
   {
     path: '/',
     component: () => import('../components/MainLayout.vue'),

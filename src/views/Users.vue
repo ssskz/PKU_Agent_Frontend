@@ -25,9 +25,9 @@
         </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="filterForm.is_active" placeholder="选择状态" clearable>
-            <el-option label="全部" :value="null" />
-            <el-option label="启用" :value="true" />
-            <el-option label="禁用" :value="false" />
+            <el-option label="全部" value="" />
+            <el-option label="启用" value="true" />
+            <el-option label="禁用" value="false" />
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -202,7 +202,7 @@ const resetting = ref(false)
 const filterForm = reactive({
   username: '',
   role: '',
-  is_active: null
+  is_active: ''
 })
 
 const users = ref([])
@@ -265,7 +265,7 @@ const getRoleTagType = (role) => {
     admin: 'warning',
     user: 'primary'
   }
-  return types[role] || 'default'
+  return types[role] || 'info'
 }
 
 const formatDateTime = (dateTime) => {
@@ -298,8 +298,8 @@ const loadUsers = async () => {
       params.role = filterForm.role
     }
     
-    if (filterForm.is_active !== null) {
-      params.is_active = filterForm.is_active
+    if (filterForm.is_active) {
+      params.is_active = filterForm.is_active === 'true'
     }
     
     const response = await getUserList(params)
@@ -338,7 +338,7 @@ const loadUsers = async () => {
 const resetFilter = () => {
   filterForm.username = ''
   filterForm.role = ''
-  filterForm.is_active = null
+  filterForm.is_active = ''
   currentPage.value = 1
   loadUsers()
 }
