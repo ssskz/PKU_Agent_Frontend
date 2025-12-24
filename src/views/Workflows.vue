@@ -1,151 +1,187 @@
 <template>
   <div class="workflows-container">
-    <!-- 页面头部 -->
-    <div class="page-header">
-      <div class="header-content">
-        <h1 class="page-title">
-          <el-icon class="title-icon"><Compass /></el-icon>
-          工作流管理
-        </h1>
-        <p class="page-desc">可视化工作流编排与执行</p>
+    <!-- 页面头部：标题 + 筛选 + 操作 -->
+    <div class="page-header-section">
+      <div class="header-top">
+        <div class="header-title">
+          <h2><el-icon><Compass /></el-icon> 工作流管理</h2>
+          <span class="header-subtitle">可视化工作流编排与执行</span>
+        </div>
+        <div class="header-actions">
+          <el-button type="primary" @click="showCreateDialog">
+            <el-icon><Plus /></el-icon>
+            创建工作流
+          </el-button>
+        </div>
       </div>
-      <div class="header-actions">
-        <el-button type="primary" size="large" @click="showCreateDialog">
-          <el-icon><Plus /></el-icon>
-          创建工作流
+      
+      <!-- 统计指标 -->
+      <div class="header-stats" v-if="statistics">
+        <div class="stat-item">
+          <span class="stat-value">{{ statistics.total_workflows }}</span>
+          <span class="stat-label">总工作流</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-value">{{ statistics.draft_workflows }}</span>
+          <span class="stat-label">草稿</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-value">{{ statistics.total_executions }}</span>
+          <span class="stat-label">执行次数</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-value success">{{ successRate }}%</span>
+          <span class="stat-label">成功率</span>
+        </div>
+      </div>
+      
+      <!-- 筛选区 -->
+      <div class="header-filters">
+        <el-input
+          v-model="searchText"
+          placeholder="搜索工作流名称或描述..."
+          clearable
+          class="search-input"
+          @change="handleSearch"
+        >
+          <template #prefix>
+            <el-icon><Search /></el-icon>
+          </template>
+        </el-input>
+
+        <el-select 
+          v-model="filterStatus" 
+          placeholder="状态筛选" 
+          clearable 
+          @change="loadWorkflows" 
+          class="status-select"
+        >
+          <el-option label="全部状态" value="" />
+          <el-option label="草稿" value="DRAFT" />
+          <el-option label="已发布" value="PUBLISHED" />
+          <el-option label="已归档" value="ARCHIVED" />
+        </el-select>
+        
+        <el-button @click="resetFilters" class="reset-btn">
+          <el-icon><RefreshLeft /></el-icon>
+          重置
         </el-button>
       </div>
     </div>
 
-    <!-- 统计卡片 -->
-    <div class="stats-cards" v-if="statistics">
-      <div class="stat-card">
-        <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-          <el-icon><Document /></el-icon>
-        </div>
-        <div class="stat-content">
-          <div class="stat-value">{{ statistics.total_workflows }}</div>
-          <div class="stat-label">总工作流</div>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-          <el-icon><Edit /></el-icon>
-        </div>
-        <div class="stat-content">
-          <div class="stat-value">{{ statistics.draft_workflows }}</div>
-          <div class="stat-label">草稿</div>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-          <el-icon><CircleCheck /></el-icon>
-        </div>
-        <div class="stat-content">
-          <div class="stat-value">{{ statistics.total_executions }}</div>
-          <div class="stat-label">总执行次数</div>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
-          <el-icon><TrendCharts /></el-icon>
-        </div>
-        <div class="stat-content">
-          <div class="stat-value">{{ successRate }}%</div>
-          <div class="stat-label">成功率</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 搜索和过滤 -->
-    <div class="filter-bar">
-      <el-input
-        v-model="searchText"
-        placeholder="搜索工作流名称或描述"
-        :prefix-icon="Search"
-        clearable
-        @input="handleSearch"
-        class="search-input"
-      />
-      <el-select v-model="filterStatus" placeholder="状态筛选" clearable @change="loadWorkflows" class="filter-select">
-        <el-option label="全部状态" value="" />
-        <el-option label="草稿" value="DRAFT" />
-        <el-option label="已发布" value="PUBLISHED" />
-        <el-option label="已归档" value="ARCHIVED" />
-      </el-select>
-    </div>
-
     <!-- 工作流列表 -->
-    <div class="workflows-list">
-      <el-card v-for="workflow in workflows" :key="workflow.uuid" class="workflow-card" shadow="hover">
-        <div class="workflow-header">
-          <div class="workflow-title-area">
-            <h3 class="workflow-name">{{ workflow.name }}</h3>
-            <el-tag :type="getStatusType(workflow.status)" size="small">
-              {{ getStatusText(workflow.status) }}
-            </el-tag>
-          </div>
-          <div class="workflow-actions">
-            <el-button size="small" @click="handleEdit(workflow)">
-              <el-icon><Edit /></el-icon>
-              编辑
-            </el-button>
-            <el-button size="small" type="primary" @click="handleExecute(workflow)" :disabled="!workflow.definition">
-              <el-icon><VideoPlay /></el-icon>
-              执行
-            </el-button>
-            <el-dropdown @command="(cmd) => handleCommand(cmd, workflow)">
-              <el-button size="small">
-                <el-icon><More /></el-icon>
-              </el-button>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item command="view">查看详情</el-dropdown-item>
-                  <el-dropdown-item command="history">执行历史</el-dropdown-item>
-                  <el-dropdown-item command="validate" :disabled="!workflow.definition">验证</el-dropdown-item>
-                  <el-dropdown-item command="duplicate">复制</el-dropdown-item>
-                  <el-dropdown-item command="delete" divided>删除</el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
+    <div class="workflows-grid" v-loading="loading">
+      <div
+        v-for="workflow in workflows"
+        :key="workflow.uuid"
+        class="workflow-card"
+        @click="handleEdit(workflow)"
+      >
+        <!-- 卡片头部 -->
+        <div class="card-header" :class="getStatusClass(workflow.status)">
+          <div class="header-content">
+            <div class="workflow-icon">
+              <el-icon :size="24"><Compass /></el-icon>
+            </div>
+            <div class="workflow-info">
+              <h3 class="workflow-name">{{ workflow.name }}</h3>
+              <div class="workflow-badges">
+                <el-tag :type="getStatusType(workflow.status)" size="small" effect="dark">
+                  {{ getStatusText(workflow.status) }}
+                </el-tag>
+                <el-tag v-if="workflow.version > 1" type="info" size="small" effect="plain">
+                  v{{ workflow.version }}
+                </el-tag>
+              </div>
+            </div>
           </div>
         </div>
-        
-        <p class="workflow-desc">{{ workflow.description || '暂无描述' }}</p>
-        
-        <div class="workflow-stats">
-          <div class="stat-item">
-            <el-icon><Document /></el-icon>
-            <span>版本 {{ workflow.version }}</span>
-          </div>
-          <div class="stat-item">
-            <el-icon><VideoPlay /></el-icon>
-            <span>执行 {{ workflow.execution_count }} 次</span>
-          </div>
-          <div class="stat-item">
-            <el-icon><CircleCheck /></el-icon>
-            <span>成功 {{ workflow.success_count }} 次</span>
-          </div>
-          <div class="stat-item">
-            <el-icon><Clock /></el-icon>
-            <span>{{ formatDate(workflow.updated_at) }}</span>
-          </div>
-        </div>
-      </el-card>
 
-      <el-empty v-if="!loading && workflows.length === 0" description="暂无工作流" />
+        <!-- 卡片主体 -->
+        <div class="card-body">
+          <p class="workflow-desc">{{ workflow.description || '暂无描述' }}</p>
+
+          <div class="workflow-stats">
+            <div class="stat-row">
+              <div class="stat-item">
+                <el-icon class="stat-icon play"><VideoPlay /></el-icon>
+                <div class="stat-info">
+                  <span class="stat-value">{{ workflow.execution_count || 0 }}</span>
+                  <span class="stat-label">执行次数</span>
+                </div>
+              </div>
+              <div class="stat-item">
+                <el-icon class="stat-icon success"><CircleCheck /></el-icon>
+                <div class="stat-info">
+                  <span class="stat-value">{{ workflow.success_count || 0 }}</span>
+                  <span class="stat-label">成功次数</span>
+                </div>
+              </div>
+              <div class="stat-item">
+                <el-icon class="stat-icon rate"><TrendCharts /></el-icon>
+                <div class="stat-info">
+                  <span class="stat-value">{{ getWorkflowSuccessRate(workflow) }}%</span>
+                  <span class="stat-label">成功率</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="workflow-meta">
+            <span class="meta-item">
+              <el-icon><Clock /></el-icon>
+              {{ formatDate(workflow.updated_at) }}
+            </span>
+          </div>
+        </div>
+
+        <!-- 卡片底部操作 -->
+        <div class="card-footer" @click.stop>
+          <el-button size="small" @click="handleEdit(workflow)">
+            <el-icon><Edit /></el-icon>
+            编辑
+          </el-button>
+          <el-button size="small" type="primary" @click="handleExecute(workflow)" :disabled="!workflow.definition">
+            <el-icon><VideoPlay /></el-icon>
+            执行
+          </el-button>
+          <el-dropdown @command="(cmd) => handleCommand(cmd, workflow)">
+            <el-button size="small">
+              <el-icon><More /></el-icon>
+            </el-button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="view">查看详情</el-dropdown-item>
+                <el-dropdown-item command="history">执行历史</el-dropdown-item>
+                <el-dropdown-item command="validate" :disabled="!workflow.definition">验证</el-dropdown-item>
+                <el-dropdown-item command="duplicate">复制</el-dropdown-item>
+                <el-dropdown-item command="delete" divided>删除</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </div>
+      </div>
+
+      <el-empty v-if="!loading && workflows.length === 0" description="暂无工作流，点击上方按钮创建" />
     </div>
 
-    <!-- 分页 -->
-    <div class="pagination" v-if="total > 0">
+    <!-- 分页区域 -->
+    <div class="pagination-section" v-if="total > 0">
+      <div class="pagination-info">
+        <span class="total-text">共 <strong>{{ total }}</strong> 个工作流</span>
+      </div>
       <el-pagination
         v-model:current-page="currentPage"
         v-model:page-size="pageSize"
-        :page-sizes="[10, 20, 50, 100]"
+        :page-sizes="[12, 24, 48]"
         :total="total"
-        layout="total, sizes, prev, pager, next, jumper"
+        layout="sizes, prev, pager, next, jumper"
         @size-change="loadWorkflows"
         @current-change="loadWorkflows"
+        class="custom-pagination"
       />
     </div>
 
@@ -225,7 +261,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Compass, Plus, Search, Edit, VideoPlay, More, Document, CircleCheck,
-  Clock, TrendCharts
+  Clock, TrendCharts, RefreshLeft
 } from '@element-plus/icons-vue'
 import {
   getWorkflows, createWorkflow, deleteWorkflow, validateWorkflow,
@@ -309,6 +345,13 @@ const loadStatistics = async () => {
 }
 
 const handleSearch = () => {
+  currentPage.value = 1
+  loadWorkflows()
+}
+
+const resetFilters = () => {
+  searchText.value = ''
+  filterStatus.value = ''
   currentPage.value = 1
   loadWorkflows()
 }
@@ -528,6 +571,15 @@ const getStatusType = (status) => {
   return typeMap[status] || 'info'
 }
 
+const getStatusClass = (status) => {
+  const classMap = {
+    DRAFT: 'status-draft',
+    PUBLISHED: 'status-published',
+    ARCHIVED: 'status-archived'
+  }
+  return classMap[status] || 'status-draft'
+}
+
 const getStatusText = (status) => {
   const textMap = {
     DRAFT: '草稿',
@@ -535,6 +587,11 @@ const getStatusText = (status) => {
     ARCHIVED: '已归档'
   }
   return textMap[status] || status
+}
+
+const getWorkflowSuccessRate = (workflow) => {
+  if (!workflow.execution_count || workflow.execution_count === 0) return 0
+  return Math.round((workflow.success_count || 0) / workflow.execution_count * 100)
 }
 
 const formatDate = (date) => {
@@ -552,205 +609,444 @@ onMounted(() => {
 
 <style scoped>
 .workflows-container {
-  padding: 0;
+  /* 主布局已有 padding */
 }
 
-/* 页面头部 */
-.page-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 20px;
-  padding: 40px;
-  margin-bottom: 32px;
-  color: white;
+/* 页面头部区域 */
+.page-header-section {
+  margin-bottom: 24px;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04), 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+}
+
+.page-header-section .header-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 
-    0 20px 60px rgba(102, 126, 234, 0.3),
-    0 8px 24px rgba(118, 75, 162, 0.2);
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.6);
 }
 
-.header-content {
-  flex: 1;
-}
-
-.page-title {
-  margin: 0 0 12px 0;
-  font-size: 2.2rem;
-  font-weight: 900;
+.header-title h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   display: flex;
   align-items: center;
-  gap: 12px;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  gap: 8px;
 }
 
-.title-icon {
-  font-size: 2.2rem;
-}
-
-.page-desc {
-  margin: 0;
-  font-size: 1.05rem;
-  opacity: 0.95;
+.header-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin-top: 4px;
+  display: block;
   font-weight: 500;
 }
 
-.header-actions {
-  display: flex;
-  gap: 12px;
+.header-actions .el-button[type="primary"] {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  color: #ffffff;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
-/* 统计卡片 */
-.stats-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
-  margin-bottom: 24px;
-}
-
-.stat-card {
-  background: white;
-  border-radius: 16px;
-  padding: 24px;
+/* 统计指标区域 */
+.header-stats {
   display: flex;
   align-items: center;
-  gap: 16px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s ease;
+  gap: 24px;
+  padding: 16px 0;
+  margin-bottom: 16px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.6);
 }
 
-.stat-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-}
-
-.stat-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 12px;
+.header-stats .stat-item {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  color: white;
+  gap: 4px;
+}
+
+.header-stats .stat-value {
   font-size: 24px;
-}
-
-.stat-content {
-  flex: 1;
-}
-
-.stat-value {
-  font-size: 2rem;
   font-weight: 800;
-  color: #1e293b;
+  color: #667eea;
   line-height: 1;
-  margin-bottom: 4px;
 }
 
-.stat-label {
-  font-size: 0.9rem;
+.header-stats .stat-value.success {
+  color: #10b981;
+}
+
+.header-stats .stat-label {
+  font-size: 12px;
   color: #64748b;
   font-weight: 500;
 }
 
-/* 过滤栏 */
-.filter-bar {
+.stat-divider {
+  width: 1px;
+  height: 40px;
+  background: rgba(226, 232, 240, 0.8);
+}
+
+/* 筛选区域 */
+.header-filters {
   display: flex;
-  gap: 16px;
-  margin-bottom: 24px;
+  gap: 12px;
+  align-items: center;
 }
 
 .search-input {
-  flex: 1;
-  max-width: 400px;
+  width: 280px;
 }
 
-.filter-select {
-  width: 150px;
-}
-
-/* 工作流列表 */
-.workflows-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-  gap: 20px;
-  margin-bottom: 24px;
-}
-
-.workflow-card {
-  border-radius: 16px;
+.search-input :deep(.el-input__wrapper) {
+  background: rgba(248, 250, 252, 0.9);
+  border: 1.5px solid rgba(226, 232, 240, 0.8);
+  border-radius: 10px;
+  padding: 4px 12px;
   transition: all 0.3s ease;
 }
 
-.workflow-card:hover {
-  transform: translateY(-4px);
+.search-input :deep(.el-input__wrapper:hover) {
+  background: #ffffff;
+  border-color: rgba(102, 126, 234, 0.4);
 }
 
-.workflow-header {
+.search-input :deep(.el-input__wrapper.is-focus) {
+  background: #ffffff;
+  border-color: #667eea;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+}
+
+.status-select {
+  width: 160px;
+}
+
+.status-select :deep(.el-input__wrapper) {
+  background: rgba(248, 250, 252, 0.9);
+  border: 1.5px solid rgba(226, 232, 240, 0.8);
+  border-radius: 10px;
+}
+
+.reset-btn {
+  background: rgba(248, 250, 252, 0.9);
+  border: 1.5px solid rgba(226, 232, 240, 0.8);
+  color: #64748b;
+  border-radius: 10px;
+}
+
+.reset-btn:hover {
+  background: #ffffff;
+  border-color: #667eea;
+  color: #667eea;
+}
+
+/* 工作流卡片网格 */
+.workflows-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+/* 工作流卡片样式 */
+.workflow-card {
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+  height: 100%;
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 12px;
-  gap: 12px;
+  flex-direction: column;
 }
 
-.workflow-title-area {
+.workflow-card:hover {
+  transform: translateY(-8px);
+  border-color: rgba(102, 126, 234, 0.3);
+  box-shadow: 0 20px 40px rgba(102, 126, 234, 0.15), 0 8px 16px rgba(0, 0, 0, 0.08);
+}
+
+/* 卡片头部 */
+.workflow-card .card-header {
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.workflow-card .card-header.status-draft {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.workflow-card .card-header.status-published {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.workflow-card .card-header.status-archived {
+  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+}
+
+.workflow-card .header-content {
+  display: flex;
+  gap: 16px;
+}
+
+.workflow-icon {
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.workflow-info {
   flex: 1;
   min-width: 0;
 }
 
-.workflow-name {
+.workflow-card .workflow-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: #ffffff;
   margin: 0 0 8px 0;
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #1e293b;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.workflow-actions {
+.workflow-badges {
   display: flex;
-  gap: 8px;
-  flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* 卡片主体 */
+.card-body {
+  padding: 20px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: #ffffff;
 }
 
 .workflow-desc {
+  font-size: 14px;
   color: #64748b;
-  margin: 0 0 16px 0;
   line-height: 1.6;
+  margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  min-height: 48px;
+  min-height: 44px;
 }
 
+/* 卡片内统计区域 */
 .workflow-stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
   padding-top: 16px;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid rgba(226, 232, 240, 0.6);
 }
 
-.stat-item {
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.workflow-stats .stat-item {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.875rem;
-  color: #64748b;
+  gap: 8px;
+  flex: 1;
 }
 
-.stat-item .el-icon {
+.workflow-stats .stat-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 16px;
 }
 
-/* 分页 */
-.pagination {
+.workflow-stats .stat-icon.play {
+  background: rgba(102, 126, 234, 0.1);
+  color: #667eea;
+}
+
+.workflow-stats .stat-icon.success {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+.workflow-stats .stat-icon.rate {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+
+.stat-info {
   display: flex;
-  justify-content: center;
-  padding: 20px 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stat-info .stat-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1;
+}
+
+.stat-info .stat-label {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+/* 元信息区域 */
+.workflow-meta {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  font-size: 12px;
+  color: #94a3b8;
+  padding-top: 12px;
+  border-top: 1px solid rgba(226, 232, 240, 0.6);
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.meta-item .el-icon {
+  font-size: 14px;
+}
+
+/* 卡片底部操作区 */
+.card-footer {
+  padding: 16px 20px;
+  background: rgba(248, 250, 252, 0.8);
+  border-top: 1px solid rgba(226, 232, 240, 0.6);
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.card-footer .el-button {
+  flex: 1;
+  min-width: 70px;
+  border-radius: 10px;
+}
+
+.card-footer .el-dropdown {
+  flex-shrink: 0;
+}
+
+.card-footer .el-dropdown .el-button {
+  flex: none;
+  min-width: auto;
+}
+
+/* 分页区域样式 */
+.pagination-section {
+  margin-top: 32px;
+  padding: 20px 24px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+}
+
+.pagination-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.total-text {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.total-text strong {
+  color: #667eea;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.custom-pagination :deep(.el-pager li) {
+  background: rgba(248, 250, 252, 0.9);
+  border: 1.5px solid rgba(226, 232, 240, 0.8);
+  border-radius: 10px;
+  margin: 0 4px;
+  min-width: 36px;
+  height: 36px;
+  line-height: 34px;
+  font-weight: 600;
+}
+
+.custom-pagination :deep(.el-pager li:hover) {
+  color: #667eea;
+  border-color: rgba(102, 126, 234, 0.4);
+}
+
+.custom-pagination :deep(.el-pager li.is-active) {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.custom-pagination :deep(.btn-prev),
+.custom-pagination :deep(.btn-next) {
+  background: rgba(248, 250, 252, 0.9);
+  border: 1.5px solid rgba(226, 232, 240, 0.8);
+  border-radius: 10px;
+  min-width: 36px;
+  height: 36px;
+}
+
+.custom-pagination :deep(.el-select .el-input__wrapper) {
+  background: rgba(248, 250, 252, 0.9);
+  border: 1.5px solid rgba(226, 232, 240, 0.8);
+  border-radius: 10px;
+}
+
+.custom-pagination :deep(.el-pagination__jump .el-input__wrapper) {
+  background: rgba(248, 250, 252, 0.9);
+  border: 1.5px solid rgba(226, 232, 240, 0.8);
+  border-radius: 10px;
+  width: 60px;
 }
 
 /* 表单提示 */
@@ -760,35 +1056,75 @@ onMounted(() => {
   color: #64748b;
 }
 
-/* 响应式 */
+/* 响应式设计 */
+@media (max-width: 992px) {
+  .header-filters {
+    flex-wrap: wrap;
+  }
+  
+  .search-input {
+    width: 100%;
+    min-width: 200px;
+  }
+}
+
 @media (max-width: 768px) {
-  .page-header {
+  .workflows-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .page-header-section {
+    padding: 16px;
+    border-radius: 12px;
+  }
+  
+  .page-header-section .header-top {
     flex-direction: column;
     align-items: flex-start;
-    gap: 24px;
-    padding: 28px;
+    gap: 12px;
   }
-
-  .page-title {
-    font-size: 1.8rem;
-  }
-
-  .workflows-list {
-    grid-template-columns: 1fr;
-  }
-
-  .stats-cards {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .filter-bar {
-    flex-direction: column;
-  }
-
-  .search-input,
-  .filter-select {
+  
+  .header-actions {
     width: 100%;
-    max-width: none;
+  }
+  
+  .header-actions .el-button {
+    width: 100%;
+  }
+  
+  .header-stats {
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  
+  .stat-divider {
+    display: none;
+  }
+  
+  .header-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .search-input,
+  .status-select {
+    width: 100%;
+  }
+  
+  .reset-btn {
+    width: 100%;
+  }
+  
+  .pagination-section {
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+    border-radius: 12px;
+  }
+  
+  .custom-pagination :deep(.el-pagination__jump) {
+    display: none;
   }
 }
 </style>

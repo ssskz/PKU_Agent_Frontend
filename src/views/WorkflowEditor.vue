@@ -145,6 +145,12 @@
               </el-form-item>
 
               <el-form-item label="系统提示词">
+                <!-- 快速模板选择 -->
+                <div class="quick-select-bar">
+                  <span class="quick-label">快速模板:</span>
+                  <el-button size="small" @click="nodeConfig.config.system_prompt = '你是一个专业的问答助手。请根据提供的参考资料回答用户问题。如果参考资料中没有相关信息，请如实告知。回答要准确、简洁、有条理。'">问答助手</el-button>
+                  <el-button size="small" @click="nodeConfig.config.system_prompt = '你是一个友好的聊天助手，用简洁友好的方式回答用户问题。'">聊天助手</el-button>
+                </div>
                 <el-input
                   v-model="nodeConfig.config.system_prompt"
                   type="textarea"
@@ -154,13 +160,43 @@
               </el-form-item>
 
               <el-form-item label="用户提示词">
+                <!-- 快速选择变量 -->
+                <div class="quick-select-bar">
+                  <span class="quick-label">插入变量:</span>
+                  <el-button size="small" @click="insertVariable('prompt', '{{input.question}}')">用户输入</el-button>
+                  <el-dropdown trigger="click" @command="(cmd) => insertVariable('prompt', cmd)">
+                    <el-button size="small">
+                      上游节点 <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                    </el-button>
+                    <template #dropdown>
+                      <el-dropdown-menu>
+                        <el-dropdown-item 
+                          v-for="node in upstreamNodes" 
+                          :key="node.id" 
+                          :command="getNodeOutputVariable(node)"
+                        >
+                          {{ node.data?.label || node.id }} → {{ getNodeOutputLabel(node) }}
+                        </el-dropdown-item>
+                        <el-dropdown-item v-if="upstreamNodes.length === 0" disabled>
+                          暂无上游节点
+                        </el-dropdown-item>
+                      </el-dropdown-menu>
+                    </template>
+                  </el-dropdown>
+                </div>
+                <!-- 快速模板 -->
+                <div class="quick-select-bar" style="margin-top: 8px;">
+                  <span class="quick-label">提示词模板:</span>
+                  <el-button size="small" @click="applyPromptTemplate('rag')">RAG问答</el-button>
+                  <el-button size="small" @click="applyPromptTemplate('simple')">简单问答</el-button>
+                </div>
                 <el-input
+                  ref="promptInputRef"
                   v-model="nodeConfig.config.prompt"
                   type="textarea"
                   :rows="5"
-                  :placeholder="variablePlaceholder"
+                  placeholder="输入提示词"
                 />
-                <div class="form-tip" v-text="variableTip"></div>
               </el-form-item>
 
               <el-form-item label="温度">
@@ -189,7 +225,7 @@
                   placeholder="https://api.example.com/endpoint"
                 />
                 <div class="form-tip">
-                  可使用变量，如: https://api.example.com/{{input.id}}
+                  可使用变量，如: https://api.example.com/{<!-- -->{input.id}}
                 </div>
               </el-form-item>
 
@@ -210,10 +246,10 @@
                   v-model="bodyText"
                   type="textarea"
                   :rows="6"
-                  placeholder='{"key": "{{input.value}}"}'
+                  placeholder='{"key": "value"}'
                 />
                 <div class="form-tip">
-                  输入 JSON 格式的请求体
+                  输入 JSON 格式的请求体，可使用变量如 {<!-- -->{input.value}}
                 </div>
               </el-form-item>
 
@@ -236,15 +272,17 @@
               </el-form-item>
 
               <el-form-item label="查询内容">
+                <!-- 快速选择按钮 -->
+                <div class="quick-select-bar">
+                  <span class="quick-label">快速选择:</span>
+                  <el-button size="small" @click="nodeConfig.config.query = '{{input.question}}'">用户输入</el-button>
+                </div>
                 <el-input
                   v-model="nodeConfig.config.query"
                   type="textarea"
-                  :rows="3"
-                  placeholder="输入查询文本，可使用 {{variable}} 引用变量"
+                  :rows="2"
+                  placeholder="输入查询文本"
                 />
-                <div class="form-tip">
-                  示例：{<!-- -->{input.question}} 或 {<!-- -->{nodes.llm_1.content}}
-                </div>
               </el-form-item>
 
               <el-form-item label="返回数量">
@@ -450,7 +488,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   ArrowLeft, Document, CircleCheck, VideoPlay, Delete,
   Position, Connection, Promotion, Link, InfoFilled,
-  Search, ChatDotRound, Edit
+  Search, ChatDotRound, Edit, ArrowDown
 } from '@element-plus/icons-vue'
 import { VueFlow, useVueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
@@ -601,6 +639,89 @@ const validKnowledgeBases = computed(() => {
   if (!Array.isArray(list)) return []
   return list.filter(kb => kb && kb.id != null)
 })
+
+// 计算当前节点的上游节点（用于变量选择器）
+const upstreamNodes = computed(() => {
+  if (!selectedNode.value) return []
+  
+  const currentNodeId = selectedNode.value.id
+  const upstreamNodeIds = new Set()
+  
+  // 通过边找到所有上游节点
+  const findUpstream = (nodeId) => {
+    edges.value.forEach(edge => {
+      if (edge.target === nodeId && !upstreamNodeIds.has(edge.source)) {
+        upstreamNodeIds.add(edge.source)
+        findUpstream(edge.source)  // 递归查找
+      }
+    })
+  }
+  
+  findUpstream(currentNodeId)
+  
+  // 返回上游节点列表（排除start和end）
+  return nodes.value.filter(n => 
+    upstreamNodeIds.has(n.id) && 
+    n.type !== 'start' && 
+    n.type !== 'end'
+  )
+})
+
+// 获取节点的输出变量
+const getNodeOutputVariable = (node) => {
+  const outputMap = {
+    'llm': 'content',
+    'http': 'body',
+    'knowledge': 'context_text',
+    'intent': 'intent',
+    'string': 'result'
+  }
+  const outputField = outputMap[node.type] || 'output'
+  return `{{nodes.${node.id}.${outputField}}}`
+}
+
+// 获取节点输出的显示标签
+const getNodeOutputLabel = (node) => {
+  const labelMap = {
+    'llm': 'AI回答内容',
+    'http': 'HTTP响应',
+    'knowledge': '检索结果',
+    'intent': '识别意图',
+    'string': '处理结果'
+  }
+  return labelMap[node.type] || '输出'
+}
+
+// 插入变量到提示词输入框
+const insertVariable = (field, variable) => {
+  if (field === 'prompt') {
+    // 在当前光标位置插入，或追加到末尾
+    nodeConfig.config.prompt = (nodeConfig.config.prompt || '') + variable
+  }
+  ElMessage.success(`已插入变量: ${variable}`)
+}
+
+// 应用提示词模板
+const applyPromptTemplate = (templateType) => {
+  // 查找知识库节点
+  const knowledgeNode = upstreamNodes.value.find(n => n.type === 'knowledge')
+  const knowledgeVar = knowledgeNode 
+    ? `{{nodes.${knowledgeNode.id}.context_text}}`
+    : '{{nodes.knowledge-xxx.context_text}}'
+  
+  const templates = {
+    rag: `参考资料：
+${knowledgeVar}
+
+用户问题：{{input.question}}
+
+请根据参考资料回答问题：`,
+    simple: `{{input.question}}`
+  }
+  
+  nodeConfig.config.prompt = templates[templateType] || ''
+  ElMessage.success('已应用模板')
+}
 
 // 方法
 const loadWorkflow = async () => {
@@ -930,15 +1051,40 @@ const confirmExecute = async () => {
 
     const execution = res.data
     if (execution.status === 'COMPLETED') {
-      // 获取LLM节点的输出作为结果展示
+      // 获取节点的输出作为结果展示
       let resultContent = ''
       const outputData = execution.output_data || {}
       const nodeOutputs = outputData.nodes || outputData
       
-      // 尝试找到LLM节点的输出
+      // 按优先级查找可展示的结果
       for (const [nodeId, nodeOutput] of Object.entries(nodeOutputs)) {
-        if (nodeOutput && nodeOutput.content) {
+        if (!nodeOutput) continue
+        
+        // 1. LLM 节点输出
+        if (nodeOutput.content) {
           resultContent = nodeOutput.content
+          break
+        }
+        // 2. HTTP 节点输出
+        if (nodeOutput.body !== undefined) {
+          const body = nodeOutput.body
+          resultContent = `HTTP 状态码: ${nodeOutput.status_code}\n\n` +
+            `响应内容:\n${typeof body === 'object' ? JSON.stringify(body, null, 2) : body}`
+          break
+        }
+        // 3. 知识库检索输出
+        if (nodeOutput.context_text) {
+          resultContent = `检索到 ${nodeOutput.count} 条结果:\n\n${nodeOutput.context_text}`
+          break
+        }
+        // 4. 字符串处理输出
+        if (nodeOutput.result !== undefined) {
+          resultContent = `处理结果:\n${JSON.stringify(nodeOutput.result, null, 2)}`
+          break
+        }
+        // 5. 意图识别输出
+        if (nodeOutput.intent) {
+          resultContent = `识别意图: ${nodeOutput.intent}\n置信度: ${nodeOutput.confidence}\n原因: ${nodeOutput.reason}`
           break
         }
       }
@@ -1237,5 +1383,25 @@ onMounted(() => {
   font-size: 0.75rem;
   color: #909399;
   line-height: 1.4;
+}
+
+/* 快速选择栏 */
+.quick-select-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.quick-select-bar .quick-label {
+  font-size: 0.75rem;
+  color: #606266;
+  white-space: nowrap;
+}
+
+.quick-select-bar .el-button {
+  padding: 4px 8px;
+  font-size: 0.75rem;
 }
 </style>
