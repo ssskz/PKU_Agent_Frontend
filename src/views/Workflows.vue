@@ -184,14 +184,29 @@
       width="600px"
     >
       <el-form label-width="100px">
-        <el-form-item label="输入数据">
+        <el-form-item label="输入内容">
+          <el-input
+            v-model="executeInputText"
+            type="textarea"
+            :rows="4"
+            placeholder="请输入您的问题或内容..."
+          />
+          <div class="form-tip">直接输入您要处理的内容，系统会自动传递给工作流</div>
+        </el-form-item>
+        
+        <!-- 高级模式切换 -->
+        <el-form-item>
+          <el-checkbox v-model="advancedMode">高级模式（JSON输入）</el-checkbox>
+        </el-form-item>
+        
+        <el-form-item v-if="advancedMode" label="JSON数据">
           <el-input
             v-model="executeInputData"
             type="textarea"
             :rows="6"
-            placeholder='请输入 JSON 格式的输入数据，例如: {"key": "value"}'
+            placeholder='{"question": "您的问题", "context": "附加信息"}'
           />
-          <div class="form-tip">提示：输入数据将传递给工作流的开始节点</div>
+          <div class="form-tip">高级用户可直接编辑 JSON 格式数据</div>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -249,7 +264,9 @@ const submitting = ref(false)
 // 执行对话框
 const executeDialogVisible = ref(false)
 const executeWorkflowData = ref(null)
-const executeInputData = ref('{}')
+const executeInputText = ref('')  // 普通文本输入
+const executeInputData = ref('{}')  // JSON输入（高级模式）
+const advancedMode = ref(false)  // 高级模式开关
 const executing = ref(false)
 
 // 计算属性
@@ -311,21 +328,55 @@ const handleEdit = (workflow) => {
 }
 
 const handleExecute = (workflow) => {
+  // 检查工作流是否有定义
+  if (!workflow.definition || !workflow.definition.nodes || workflow.definition.nodes.length === 0) {
+    ElMessage.warning('请先编辑工作流，添加至少一个节点后再执行')
+    return
+  }
+  
+  // 检查是否有开始节点
+  const hasStartNode = workflow.definition.nodes.some(n => n.type === 'start')
+  if (!hasStartNode) {
+    ElMessage.warning('工作流缺少开始节点，请先添加开始节点')
+    return
+  }
+  
   executeWorkflowData.value = workflow
+  // 重置输入
+  executeInputText.value = ''
   executeInputData.value = '{}'
+  advancedMode.value = false
   executeDialogVisible.value = true
 }
 
 const confirmExecute = async () => {
   try {
-    // 验证 JSON 格式
     let inputData = {}
-    if (executeInputData.value.trim()) {
-      try {
-        inputData = JSON.parse(executeInputData.value)
-      } catch (e) {
-        ElMessage.error('输入数据格式错误，请输入有效的 JSON')
-        return
+    
+    // 根据模式构建输入数据
+    if (advancedMode.value) {
+      // 高级模式：使用JSON输入
+      if (executeInputData.value.trim()) {
+        try {
+          inputData = JSON.parse(executeInputData.value)
+        } catch (e) {
+          ElMessage.error('JSON 格式错误，请检查输入')
+          return
+        }
+      }
+    } else {
+      // 普通模式：将文本包装为标准输入格式
+      const text = executeInputText.value.trim()
+      if (text) {
+        // 支持多种常用变量名，方便工作流引用
+        inputData = {
+          text: text,           // {{input.text}}
+          question: text,       // {{input.question}}
+          content: text,        // {{input.content}}
+          message: text,        // {{input.message}}
+          query: text,          // {{input.query}}
+          input: text           // {{input.input}}
+        }
       }
     }
 
@@ -337,12 +388,27 @@ const confirmExecute = async () => {
     // 显示执行结果
     const execution = res.data
     if (execution.status === 'COMPLETED') {
-      ElMessageBox.alert(`执行成功！耗时：${execution.duration_seconds}秒`, '执行完成', {
-        confirmButtonText: '查看详情',
-        callback: () => {
-          router.push(`/workflows/${executeWorkflowData.value.uuid}/executions/${execution.uuid}`)
+      // 获取LLM节点的输出作为结果展示
+      let resultContent = ''
+      const outputData = execution.output_data || {}
+      const nodeOutputs = outputData.nodes || outputData
+      
+      // 尝试找到LLM节点的输出
+      for (const [nodeId, nodeOutput] of Object.entries(nodeOutputs)) {
+        if (nodeOutput && nodeOutput.content) {
+          resultContent = nodeOutput.content
+          break
         }
-      })
+      }
+      
+      if (resultContent) {
+        ElMessageBox.alert(resultContent, '执行结果', {
+          confirmButtonText: '确定',
+          dangerouslyUseHTMLString: false
+        })
+      } else {
+        ElMessageBox.alert(`执行成功！耗时：${execution.duration_seconds}秒`, '执行完成')
+      }
     } else if (execution.status === 'FAILED') {
       ElMessageBox.alert(`执行失败：${execution.error_message}`, '执行失败', {
         type: 'error'
