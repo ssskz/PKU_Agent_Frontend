@@ -308,28 +308,136 @@
               </el-form-item>
 
               <el-form-item label="输入文本">
+                <!-- 快速选择变量 -->
+                <div class="quick-select-bar">
+                  <span class="quick-label">快速选择:</span>
+                  <el-button size="small" @click="nodeConfig.config.input_text = '{{input.question}}'">用户输入</el-button>
+                  <el-dropdown trigger="click" @command="(cmd) => nodeConfig.config.input_text = cmd">
+                    <el-button size="small">
+                      上游节点 <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                    </el-button>
+                    <template #dropdown>
+                      <el-dropdown-menu>
+                        <el-dropdown-item 
+                          v-for="node in upstreamNodes" 
+                          :key="node.id" 
+                          :command="getNodeOutputVariable(node)"
+                        >
+                          {{ node.data?.label || node.id }}
+                        </el-dropdown-item>
+                        <el-dropdown-item v-if="upstreamNodes.length === 0" disabled>
+                          暂无上游节点
+                        </el-dropdown-item>
+                      </el-dropdown-menu>
+                    </template>
+                  </el-dropdown>
+                </div>
                 <el-input
                   v-model="nodeConfig.config.input_text"
                   type="textarea"
-                  :rows="3"
-                  placeholder="输入待识别的文本，可使用 {{variable}} 引用变量"
+                  :rows="2"
+                  placeholder="输入待识别的文本"
                 />
-                <div class="form-tip">
-                  示例：{<!-- -->{input.user_message}}
+              </el-form-item>
+
+              <!-- 意图模板快速选择 -->
+              <el-form-item label="快速模板">
+                <div class="intent-templates">
+                  <el-button 
+                    v-for="tpl in intentTemplates" 
+                    :key="tpl.name"
+                    size="small" 
+                    @click="applyIntentTemplate(tpl.intents)"
+                  >
+                    {{ tpl.name }}
+                  </el-button>
+                </div>
+                <div class="form-tip">点击模板可快速填充常用意图配置</div>
+              </el-form-item>
+
+              <!-- 可视化意图列表管理 -->
+              <el-form-item label="意图列表">
+                <div class="intents-manager">
+                  <!-- 已添加的意图 -->
+                  <div 
+                    v-for="(intent, index) in nodeConfig.config.intents" 
+                    :key="index"
+                    class="intent-item"
+                  >
+                    <div class="intent-header">
+                      <el-input 
+                        v-model="intent.name" 
+                        placeholder="意图名称" 
+                        size="small"
+                        style="width: 120px"
+                      />
+                      <el-button 
+                        type="danger" 
+                        size="small" 
+                        :icon="Delete" 
+                        circle 
+                        @click="removeIntent(index)"
+                      />
+                    </div>
+                    <el-input 
+                      v-model="intent.description" 
+                      placeholder="意图描述（帮助AI理解）" 
+                      size="small"
+                      style="margin-top: 8px"
+                    />
+                    <div class="keywords-input" style="margin-top: 8px">
+                      <el-tag
+                        v-for="(keyword, kIndex) in intent.keywords"
+                        :key="kIndex"
+                        closable
+                        size="small"
+                        @close="removeKeyword(index, kIndex)"
+                        style="margin-right: 4px; margin-bottom: 4px"
+                      >
+                        {{ keyword }}
+                      </el-tag>
+                      <el-input
+                        v-model="newKeywords[index]"
+                        placeholder="添加关键词"
+                        size="small"
+                        style="width: 100px"
+                        @keyup.enter="addKeyword(index)"
+                      >
+                        <template #append>
+                          <el-button :icon="Plus" @click="addKeyword(index)" />
+                        </template>
+                      </el-input>
+                    </div>
+                  </div>
+                  
+                  <!-- 添加新意图按钮 -->
+                  <el-button 
+                    type="primary" 
+                    plain 
+                    size="small" 
+                    :icon="Plus" 
+                    @click="addIntent"
+                    style="width: 100%; margin-top: 8px"
+                  >
+                    添加意图
+                  </el-button>
                 </div>
               </el-form-item>
 
-              <el-form-item label="意图列表">
-                <el-input
-                  v-model="intentsText"
-                  type="textarea"
-                  :rows="8"
-                  placeholder='[{"name": "查询", "description": "用户想要查询信息", "keywords": ["查", "问"]}]'
-                />
-                <div class="form-tip">
-                  输入 JSON 数组格式，每个意图包含 name、description、keywords
-                </div>
-              </el-form-item>
+              <!-- 高级模式：JSON编辑 -->
+              <el-collapse style="margin-top: 12px">
+                <el-collapse-item title="高级模式：JSON编辑" name="json">
+                  <el-input
+                    v-model="intentsText"
+                    type="textarea"
+                    :rows="6"
+                    placeholder='[{"name": "查询", "description": "用户想要查询信息", "keywords": ["查", "问"]}]'
+                  />
+                  <div class="form-tip">
+                    高级用户可直接编辑 JSON 格式数据
+                  </div>
+                </el-collapse-item>
+              </el-collapse>
             </template>
 
             <!-- String 字符串处理节点配置 -->
@@ -488,7 +596,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   ArrowLeft, Document, CircleCheck, VideoPlay, Delete,
   Position, Connection, Promotion, Link, InfoFilled,
-  Search, ChatDotRound, Edit, ArrowDown
+  Search, ChatDotRound, Edit, ArrowDown, Plus
 } from '@element-plus/icons-vue'
 import { VueFlow, useVueFlow } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
@@ -528,6 +636,49 @@ const executeInputText = ref('')  // 普通文本输入
 const executeInputData = ref('{}')  // JSON输入（高级模式）
 const advancedMode = ref(false)  // 高级模式开关
 const executing = ref(false)
+
+// 意图识别相关数据
+const newKeywords = ref({})  // 存储每个意图的新关键词输入
+
+// 预设的意图模板
+const intentTemplates = [
+  {
+    name: '通用问答',
+    intents: [
+      { name: '知识查询', description: '用户想要查询某个知识点或问题答案', keywords: ['什么是', '为什么', '怎么', '如何', '解释', '介绍'] },
+      { name: '闲聊', description: '用户进行日常闲聊或打招呼', keywords: ['你好', '嗨', '在吗', '聊天', '早上好', '晚上好'] },
+      { name: '反馈建议', description: '用户提供反馈或建议', keywords: ['建议', '反馈', '改进', '问题', '投诉'] },
+      { name: '其他', description: '无法归类的其他意图', keywords: [] }
+    ]
+  },
+  {
+    name: '客服场景',
+    intents: [
+      { name: '咨询产品', description: '用户咨询产品信息', keywords: ['产品', '价格', '功能', '介绍', '有什么'] },
+      { name: '售后服务', description: '用户需要售后服务', keywords: ['退货', '换货', '维修', '保修', '售后'] },
+      { name: '订单查询', description: '用户查询订单状态', keywords: ['订单', '物流', '发货', '到了吗', '什么时候'] },
+      { name: '投诉建议', description: '用户投诉或提建议', keywords: ['投诉', '不满意', '建议', '改进'] }
+    ]
+  },
+  {
+    name: '教育场景',
+    intents: [
+      { name: '课程咨询', description: '咨询课程相关信息', keywords: ['课程', '学习', '报名', '学费', '上课'] },
+      { name: '作业辅导', description: '请求作业或学习辅导', keywords: ['作业', '题目', '不会', '帮忙', '解答'] },
+      { name: '考试相关', description: '考试相关问题', keywords: ['考试', '成绩', '分数', '考试时间'] },
+      { name: '请假', description: '学生请假', keywords: ['请假', '生病', '不来', '缺席'] }
+    ]
+  },
+  {
+    name: 'IoT设备',
+    intents: [
+      { name: '设备控制', description: '控制设备开关或操作', keywords: ['打开', '关闭', '开启', '关掉', '控制', '调节'] },
+      { name: '状态查询', description: '查询设备状态', keywords: ['状态', '温度', '湿度', '当前', '现在', '多少'] },
+      { name: '设备报警', description: '设备报警或异常', keywords: ['报警', '异常', '故障', '坏了', '不工作'] },
+      { name: '设置修改', description: '修改设备设置', keywords: ['设置', '修改', '调整', '更改', '配置'] }
+    ]
+  }
+]
 
 // 变量提示文本（避免 Vue 模板解析双花括号）
 const variablePlaceholder = '输入提示词，可使用 {{variable}} 引用变量'
@@ -1191,6 +1342,60 @@ const onNodeDragStop = (event) => {
   console.log('节点拖拽结束:', event.node?.id)
 }
 
+// ========== 意图识别相关方法 ==========
+
+// 应用意图模板
+const applyIntentTemplate = (intents) => {
+  // 深拷贝意图列表，避免修改原模板
+  nodeConfig.config.intents = JSON.parse(JSON.stringify(intents))
+  // 重置关键词输入
+  newKeywords.value = {}
+  ElMessage.success('已应用意图模板')
+}
+
+// 添加新意图
+const addIntent = () => {
+  if (!nodeConfig.config.intents) {
+    nodeConfig.config.intents = []
+  }
+  nodeConfig.config.intents.push({
+    name: '',
+    description: '',
+    keywords: []
+  })
+}
+
+// 删除意图
+const removeIntent = (index) => {
+  nodeConfig.config.intents.splice(index, 1)
+  // 清理对应的关键词输入
+  delete newKeywords.value[index]
+}
+
+// 添加关键词
+const addKeyword = (intentIndex) => {
+  const keyword = newKeywords.value[intentIndex]?.trim()
+  if (!keyword) return
+  
+  if (!nodeConfig.config.intents[intentIndex].keywords) {
+    nodeConfig.config.intents[intentIndex].keywords = []
+  }
+  
+  // 检查是否已存在
+  if (nodeConfig.config.intents[intentIndex].keywords.includes(keyword)) {
+    ElMessage.warning('该关键词已存在')
+    return
+  }
+  
+  nodeConfig.config.intents[intentIndex].keywords.push(keyword)
+  newKeywords.value[intentIndex] = ''  // 清空输入
+}
+
+// 删除关键词
+const removeKeyword = (intentIndex, keywordIndex) => {
+  nodeConfig.config.intents[intentIndex].keywords.splice(keywordIndex, 1)
+}
+
 // 生命周期
 onMounted(() => {
   loadWorkflow()
@@ -1403,5 +1608,54 @@ onMounted(() => {
 .quick-select-bar .el-button {
   padding: 4px 8px;
   font-size: 0.75rem;
+}
+
+/* 意图模板选择区 */
+.intent-templates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* 意图管理区 */
+.intents-manager {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.intent-item {
+  background: white;
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.intent-item:last-child {
+  margin-bottom: 0;
+}
+
+.intent-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.keywords-input {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.keywords-input .el-tag {
+  background: #ecf5ff;
+  border-color: #d9ecff;
+  color: #409eff;
+}
+
+.keywords-input .el-input {
+  flex-shrink: 0;
 }
 </style>
