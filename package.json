@@ -1,7 +1,7 @@
 {
   "name": "aiot-admin-frontend",
   "version": "1.0.0",
-  "description": "物联网设备服务系统前端",
+  "description": "PKU-RAG前端",
   "type": "module",
   "scripts": {
     "dev": "vite",

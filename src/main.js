@@ -24,7 +24,7 @@ const userStore = useUserStore()
 userStore.initializeAuth()
 
 // 设置页面标题
-const appTitle = import.meta.env.VITE_APP_TITLE || '物联网设备服务系统'
+const appTitle = import.meta.env.VITE_APP_TITLE || 'PKU-RAG'
 document.title = appTitle
 
 app.mount('#app')
